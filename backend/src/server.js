@@ -35,6 +35,11 @@ app.post('/api/admin/upload', requireAdmin, upload.single('image'), (req, res) =
 // ملفات الصور المرفوعة
 app.use('/uploads', express.static(path.join(__dirname, '..', 'uploads')));
 
+// تقديم الفرونت مباشرة من نفس السيرفر (ربط كامل بسيرفر واحد)
+// frontend root = v4/ (index.html, admin.html, styles.css, script.js ...)
+const FRONT_DIR = path.join(__dirname, '..', '..');
+app.use(express.static(FRONT_DIR, { extensions: ['html'] }));
+
 app.get('/health', (req, res) => res.json({ ok: true, service: 'abojabal-backend', time: new Date().toISOString() }));
 
 // معالج أخطاء موحد

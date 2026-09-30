@@ -30,6 +30,7 @@
       <button data-tab="services">🧰 الخدمات</button>
       <button data-tab="products">🚜 المعدات</button>
       <button data-tab="steps">🪜 خطوات العمل</button>
+      <button data-tab="points">⭐ نقاط عن الشركة</button>
       <button data-tab="messages">✉️ الرسائل <b id="msgCount"></b></button>
     </nav>
     <button id="logout" class="btn ghost">خروج</button>
@@ -41,13 +42,16 @@
     <!-- الإعدادات -->
     <section id="tab-settings" class="panel">
       <form id="settingsForm" class="card grid2">
-        <h3>الهوية واللوجو</h3>
+        <h3>الهوية واللوجو + SEO</h3>
         <label>اسم الموقع<input name="siteName"></label>
         <label>وصف تحت الاسم<input name="siteSub"></label>
         <label>أيقونة اللوجو (حرفان)<input name="logoIcon" maxlength="4"></label>
+        <label class="full">عنوان المتصفح (title)<input name="siteTitle" dir="ltr"></label>
+        <label class="full">وصف محركات البحث<textarea name="metaDesc" rows="2"></textarea></label>
         <label>البريد<input name="email" dir="ltr"></label>
         <label>الهاتف<input name="phone" dir="ltr"></label>
         <label>العنوان<input name="address"></label>
+        <label>سطر الفوتر<input name="footerNote"></label>
         <h3>الواجهة الرئيسية</h3>
         <label>سطر صغير فوق العنوان<input name="heroEyebrow"></label>
         <label>العنوان (جزء 1)<input name="heroTitleA"></label>
@@ -57,13 +61,35 @@
         <label class="full">صورة الواجهة (رابط أو ارفع بالأسفل)<input name="heroImage" dir="ltr"></label>
         <label>تعليق صغير على الصورة<input name="heroCaptionSmall"></label>
         <label>تعليق كبير على الصورة<input name="heroCaptionBig"></label>
+        <label>زر أساسي<input name="heroPrimary"></label>
+        <label>زر ثانوي<input name="heroSecondary"></label>
+        <label>كارت عائم صغير<input name="floatingSmall"></label>
+        <label>كارت عائم كبير<input name="floatingBig"></label>
+        <label class="full">صف الثقة (مثال: 01|توريد منظم ، 02|خيارات متعددة)<input name="trust"></label>
         <h3>قسم عن الشركة</h3>
+        <label>رقم القسم<input name="aboutNo"></label>
         <label>العنوان (جزء 1)<input name="aboutTitleA"></label>
         <label>العنوان (مميز)<input name="aboutTitleHL"></label>
         <label class="full">الوصف<textarea name="aboutDesc" rows="3"></textarea></label>
         <label class="full">صورة القسم<input name="aboutImage" dir="ltr"></label>
         <label>وسم الصورة<input name="aboutTag"></label>
         <label>وسم كبير<input name="aboutTagBig"></label>
+        <h3>عناوين الأقسام</h3>
+        <label>خدمات: الرقم<input name="servicesNo"></label>
+        <label>خدمات: عنوان 1<input name="servicesTitleA"></label>
+        <label>خدمات: عنوان مميز<input name="servicesTitleHL"></label>
+        <label class="full">خدمات: الوصف<textarea name="servicesDesc" rows="2"></textarea></label>
+        <label>معدات: الرقم<input name="productsNo"></label>
+        <label>معدات: عنوان 1<input name="productsTitleA"></label>
+        <label>معدات: عنوان مميز<input name="productsTitleHL"></label>
+        <label>خطوات: الرقم<input name="processNo"></label>
+        <label>خطوات: عنوان 1<input name="processTitleA"></label>
+        <label>خطوات: عنوان مميز<input name="processTitleHL"></label>
+        <label class="full">خطوات: الوصف<textarea name="processDesc" rows="2"></textarea></label>
+        <label>تواصل: الرقم<input name="contactNo"></label>
+        <label>تواصل: عنوان 1<input name="contactTitleA"></label>
+        <label>تواصل: عنوان مميز<input name="contactTitleHL"></label>
+        <label class="full">تواصل: الوصف<textarea name="contactDesc" rows="2"></textarea></label>
         <label class="full">شريط متحرك (افصل بفاصلة ،)<input name="ticker"></label>
         <div class="full row"><button class="btn primary" type="submit">💾 حفظ الإعدادات</button></div>
       </form>
@@ -88,6 +114,11 @@
     <section id="tab-steps" class="panel hidden">
       <div class="card"><h3>➕ خطوة جديدة</h3><form id="stepForm" class="grid2"><label>الرقم<input name="num" value="05"></label><label>العنوان<input name="title" required></label><label>الترتيب<input name="order" type="number" value="5"></label><label class="full">الوصف<textarea name="desc" rows="2"></textarea></label><div class="full row"><button class="btn primary">إضافة</button></div></form></div>
       <div id="stepsList" class="list"></div>
+    </section>
+    <!-- نقاط عن الشركة -->
+    <section id="tab-points" class="panel hidden">
+      <div class="card"><h3>➕ نقطة جديدة</h3><form id="pointForm" class="grid2"><label>الرقم<input name="num" value="04"></label><label>العنوان<input name="title" required></label><label>الترتيب<input name="order" type="number" value="4"></label><label class="full">الوصف<textarea name="desc" rows="2"></textarea></label><div class="full row"><button class="btn primary">إضافة</button></div></form></div>
+      <div id="pointsList" class="list"></div>
     </section>
     <!-- الرسائل -->
     <section id="tab-messages" class="panel hidden"><div id="messagesList" class="list"></div></section>

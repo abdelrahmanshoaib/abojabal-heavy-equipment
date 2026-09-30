@@ -8,12 +8,15 @@ const router = express.Router();
 router.get('/site', (req, res) => {
   const d = db.read();
   const visible = (arr) => (arr || []).filter((x) => x.visible !== false).sort((a, b) => (a.order || 0) - (b.order || 0));
+  const byOrder = (arr) => [...(arr || [])].sort((a, b) => (a.order || 0) - (b.order || 0));
   res.json({
     settings: d.settings,
     pages: visible(d.pages),
-    services: [...(d.services || [])].sort((a, b) => (a.order || 0) - (b.order || 0)),
-    products: [...(d.products || [])].sort((a, b) => (a.order || 0) - (b.order || 0)),
-    steps: [...(d.steps || [])].sort((a, b) => (a.order || 0) - (b.order || 0))
+    pagesAll: byOrder(d.pages || []),
+    services: byOrder(d.services),
+    products: byOrder(d.products),
+    steps: byOrder(d.steps),
+    points: byOrder(d.points)
   });
 });
 

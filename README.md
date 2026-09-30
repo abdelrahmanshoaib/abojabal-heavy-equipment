@@ -2,10 +2,11 @@
 
 موقع تعريفي عربي (RTL) + باك-إند تحكم كامل.
 
-## 1) الموقع (فرونت)
-- `index.html` + `styles.css` + `script.js` — يعمل **بدون باك-إند** (محتوى ثابت fallback)
-- لو الباك شغال، `script.js` يجلب المحتوى تلقائياً من `GET /api/site` ويعيد رسم الخدمات/المنتجات/الخطوات/النصوص/الصور
-- فورم التواصل يحاول `POST /api/contact` أولاً، ولو مفيش باك يعرض رسالة تجريبية
+## 1) الموقع (فرونت — ربط كامل)
+- `index.html` + `config.js` + `script.js` — يعمل **بدون باك-إند** (fallback ثابت)
+- عند تشغيل الباك، `script.js` يجرّب نفس الأصل أولاً ثم `config.js` ثم `localhost:3001`، ويعيد رسم **كل شيء**:
+  SEO (title/meta) + اللوجو + النافبار من `pages` + الهيرو (نصوص/صور/أزرار/ثقة/كارت عائم) + التيكر + عن الشركة (عناوين/صورة/نقاط `points`) + عناوين كل الأقسام + الخدمات + الفلاتر الديناميكية من الفئات الفعلية + المنتجات + الخطوات + التواصل (بيانات + خيارات الفورم من الخدمات) + الفوتر + صفحات مخصصة جديدة تُعرض تلقائياً + مؤشر حالة الاتصال
+- فورم التواصل يجرّب كل الروابط المتاحة ويرسل لـ `POST /api/contact`
 
 ## 2) الباك-إند (Node + Express)
 ```
@@ -24,11 +25,12 @@ npm start              # http://localhost:3001
 
 ### API أدمن (يحتاج `Authorization: Bearer <token>`)
 - `POST /api/admin/login` — `{username,password}`
-- `GET/PUT /api/admin/settings` — اللوجو والنصوص والصور وبيانات التواصل
-- `GET/POST /api/admin/pages` + `PUT/DELETE /api/admin/pages/:id` — إضافة/حذف/إخفاء الصفحات
-- نفس النمط لـ: `services` / `products` / `steps`
+- `GET/PUT /api/admin/settings` — 45 حقل: SEO + لوجو + هيرو + ثقة + كل عناوين الأقسام + تواصل + فوتر + تيكر
+- `GET/POST /api/admin/pages` + `PUT/DELETE /api/admin/pages/:id` — إضافة/حذف/إخفاء الصفحات (المخصصة تظهر تلقائياً في الموقع)
+- نفس النمط لـ: `services` / `products` / `steps` / `points`
 - `GET /api/admin/messages` + `PUT .../read` + `DELETE ...`
 - `POST /api/admin/upload` — form-data باسم `image` (صور فقط، حد 5MB)
+- الباك يقدم الفرونت نفسه: افتح `http://localhost:3001/` للموقع و `http://localhost:3001/admin.html` للوحة — سيرفر واحد = ربط كامل بدون CORS
 
 ## 3) لوحة التحكم
 - افتح `admin.html` في المتصفح
@@ -41,9 +43,9 @@ npm start              # http://localhost:3001
   - إخفاء أي قسم من الموقع بدون حذفه (`ظاهرة؟ = مخفية`)
 
 ## 4) النشر
-- الفرونت يترفع على GitHub Pages عادي
-- الباك يشتغل على أي VPS: `node backend/src/server.js` أو `pm2 start backend/src/server.js --name abojabal`
-- غيّر `window.ABOJABAL_API` في `index.html` لرابط السيرفر الإنتاجي
+- الفرونت يترفع على GitHub Pages عادي (يشتغل ثابت)
+- الباك يشتغل على أي VPS: `node backend/src/server.js` أو `pm2 start backend/src/server.js --name abojabal` — وهو يقدم الموقع + اللوحة + API معاً
+- للإنتاج غيّر رابط واحد فقط في `config.js`: `window.ABOJABAL_API = 'https://yourdomain.com'`
 
 ## الأمان
 - Helmet + CORS + Rate-limit على تسجيل الدخول والفورم

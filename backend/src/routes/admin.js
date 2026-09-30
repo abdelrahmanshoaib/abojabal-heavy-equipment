@@ -20,10 +20,11 @@ router.get('/settings', (req, res) => res.json(db.read().settings));
 router.put('/settings', (req, res) => {
   const d = db.read();
   const b = req.body || {};
-  const keys = ['siteName', 'siteSub', 'logoIcon', 'heroEyebrow', 'heroTitleA', 'heroTitleHL', 'heroTitleB', 'heroDesc', 'heroCaptionSmall', 'heroCaptionBig', 'aboutTitleA', 'aboutTitleHL', 'aboutDesc', 'aboutTag', 'aboutTagBig', 'email', 'phone', 'address'];
+  const keys = ['siteName', 'siteSub', 'logoIcon', 'siteTitle', 'metaDesc', 'heroEyebrow', 'heroTitleA', 'heroTitleHL', 'heroTitleB', 'heroDesc', 'heroCaptionSmall', 'heroCaptionBig', 'heroPrimary', 'heroSecondary', 'floatingSmall', 'floatingBig', 'aboutNo', 'aboutTitleA', 'aboutTitleHL', 'aboutDesc', 'aboutTag', 'aboutTagBig', 'servicesNo', 'servicesTitleA', 'servicesTitleHL', 'servicesDesc', 'productsNo', 'productsTitleA', 'productsTitleHL', 'processNo', 'processTitleA', 'processTitleHL', 'processDesc', 'contactNo', 'contactTitleA', 'contactTitleHL', 'contactDesc', 'email', 'phone', 'address', 'footerNote'];
   keys.forEach((k) => { if (b[k] !== undefined) d.settings[k] = str(b[k], 2000); });
   ['heroImage', 'aboutImage'].forEach((k) => { if (b[k] !== undefined) d.settings[k] = url(b[k]) || d.settings[k]; });
   if (Array.isArray(b.ticker)) d.settings.ticker = b.ticker.map((t) => str(t, 100)).filter(Boolean).slice(0, 12);
+  if (Array.isArray(b.trust)) d.settings.trust = b.trust.map((t) => ({ n: str(t.n || t.num || '', 10), t: str(t.t || t.label || t.title || '', 100) })).filter((x) => x.t).slice(0, 6);
   db.write(d);
   res.json({ ok: true, settings: d.settings });
 });
@@ -76,6 +77,9 @@ const products = crud('products', (b) => ({
 const steps = crud('steps', (b) => ({
   num: str(b.num, 10), title: str(b.title, 200), desc: str(b.desc, 2000), order: num(b.order)
 }));
+const points = crud('points', (b) => ({
+  num: str(b.num, 10), title: str(b.title, 200), desc: str(b.desc, 2000), order: num(b.order)
+}));
 
 router.get('/pages', pages.list); router.post('/pages', pages.create);
 router.put('/pages/:id', pages.update); router.delete('/pages/:id', pages.remove);
@@ -88,6 +92,9 @@ router.put('/products/:id', products.update); router.delete('/products/:id', pro
 
 router.get('/steps', steps.list); router.post('/steps', steps.create);
 router.put('/steps/:id', steps.update); router.delete('/steps/:id', steps.remove);
+
+router.get('/points', points.list); router.post('/points', points.create);
+router.put('/points/:id', points.update); router.delete('/points/:id', points.remove);
 
 // ---- MESSAGES inbox ----
 router.get('/messages', (req, res) => res.json(db.read().messages || []));

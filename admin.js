@@ -51,7 +51,7 @@ $('#logout').onclick = () => { TOKEN = ''; localStorage.removeItem('abojabal_tok
 $('#refresh').onclick = loadAll;
 
 // تبويبات
-const titles = { settings: 'الإعدادات واللوجو', pages: 'الصفحات', services: 'الخدمات', products: 'المعدات', steps: 'خطوات العمل', messages: 'الرسائل' };
+const titles = { settings: 'الإعدادات واللوجو', pages: 'الصفحات', services: 'الخدمات', products: 'المعدات', steps: 'خطوات العمل', points: 'نقاط عن الشركة', messages: 'الرسائل' };
 $$('#tabs button').forEach((b) => b.onclick = () => {
   $$('#tabs button').forEach((x) => x.classList.remove('active'));
   b.classList.add('active');
@@ -66,12 +66,16 @@ async function loadAll() {
     const s = await api('/api/admin/settings', { headers: headers(false) });
     const f = $('#settingsForm');
     Object.keys(s).forEach((k) => {
-      if (f.elements[k]) f.elements[k].value = Array.isArray(s[k]) ? s[k].join(' ، ') : (s[k] || '');
+      if (!f.elements[k]) return;
+      if (k === 'ticker' && Array.isArray(s[k])) f.elements[k].value = s[k].join(' ، ');
+      else if (k === 'trust' && Array.isArray(s[k])) f.elements[k].value = s[k].map((x) => `${x.n || ''}|${x.t || ''}`).join(' ، ');
+      else f.elements[k].value = s[k] || '';
     });
     loadList('pages', '#pagesList', (p) => `<b>${p.title}</b><span class="meta">/${p.slug} • ترتيب ${p.order || 0} • ${p.visible === false ? 'مخفية' : 'ظاهرة'}</span><p>${(p.content || '').slice(0, 120)}</p>`);
     loadList('services', '#servicesList', (x) => `<b>${x.icon || ''} ${x.title}</b><span class="meta">${x.num || ''} • ترتيب ${x.order || 0}</span><p>${x.desc || ''}</p>`);
     loadList('products', '#productsList', (x) => `<b>${x.title}</b><span class="meta">${x.catLabel || x.category} • ${x.num || ''}</span>${x.image ? `<img src="${fullImg(x.image)}">` : ''}<p>${x.desc || ''}</p>`);
     loadList('steps', '#stepsList', (x) => `<b>${x.num || ''} — ${x.title}</b><p>${x.desc || ''}</p>`);
+    loadList('points', '#pointsList', (x) => `<b>${x.num || ''} — ${x.title}</b><p>${x.desc || ''}</p>`);
     const msgs = await api('/api/admin/messages', { headers: headers(false) });
     $('#msgCount').textContent = msgs.filter((m) => !m.read).length ? `(${msgs.filter((m) => !m.read).length})` : '';
     $('#messagesList').innerHTML = msgs.length ? '' : '<div class="card">لا توجد رسائل بعد.</div>';
@@ -121,6 +125,7 @@ $('#settingsForm').addEventListener('submit', async (e) => {
   const body = {};
   [...f.elements].forEach((el) => { if (el.name) body[el.name] = el.value; });
   if (body.ticker) body.ticker = String(body.ticker).split(/[,،]/).map((t) => t.trim()).filter(Boolean);
+  if (body.trust) body.trust = String(body.trust).split(/[,،]/).map((t) => t.trim()).filter(Boolean).map((t) => { const [n, ...rest] = t.split('|'); return { n: (n || '').trim(), t: rest.join('|').trim() || n.trim() }; });
   try { await api('/api/admin/settings', { method: 'PUT', headers: headers(), body: JSON.stringify(body) }); say('تم حفظ الإعدادات ✅'); }
   catch (err) { say(err.message, false); }
 });
@@ -156,3 +161,4 @@ bindAdd('#pageForm', 'pages');
 bindAdd('#serviceForm', 'services');
 bindAdd('#productForm', 'products');
 bindAdd('#stepForm', 'steps');
+bindAdd('#pointForm', 'points');

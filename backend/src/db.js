@@ -1,7 +1,8 @@
 /**
  * مخزن JSON بسيط — يغني عن Postgres لموقع تعريفي صغير
  * الملف: backend/data/db.json
- * الهيكل: { settings, pages, services, products, steps, messages }
+ * الهيكل: { settings, pages, services, products, steps, points, messages }
+ * القاعدة: non-destructive — أي مفتاح ناقص يُستكمل من الافتراضي بدون مسح داتا
  */
 const fs = require('fs');
 const path = require('path');
@@ -15,6 +16,8 @@ function defaultData() {
       siteName: 'أبو جبل',
       siteSub: 'للمعدات الثقيلة',
       logoIcon: 'AJ',
+      siteTitle: 'أبو جبل | حلول المعدات الثقيلة',
+      metaDesc: 'أبو جبل للمعدات الثقيلة — بيع واستيراد وتصدير المعدات الثقيلة.',
       heroEyebrow: 'تجارة المعدات الثقيلة بثقة واحتراف',
       heroTitleA: 'نحوّل قوة',
       heroTitleHL: 'المعدات',
@@ -23,15 +26,41 @@ function defaultData() {
       heroImage: 'https://images.unsplash.com/photo-1581094794329-c8112a89af12?auto=format&fit=crop&w=1400&q=85',
       heroCaptionSmall: 'حلول جاهزة للمشروعات',
       heroCaptionBig: 'قوة. دقة. التزام.',
+      heroPrimary: 'استكشف المعدات ↗',
+      heroSecondary: 'اطلب استشارة ↗',
+      floatingSmall: 'استجابة وتنسيق',
+      floatingBig: 'من البداية حتى التسليم',
+      trust: [
+        { n: '01', t: 'توريد منظم' },
+        { n: '02', t: 'خيارات متعددة' },
+        { n: '03', t: 'متابعة واضحة' }
+      ],
+      aboutNo: '01 / عن الشركة',
       aboutTitleA: 'شريك عملي',
       aboutTitleHL: 'لخططك الكبيرة.',
       aboutDesc: 'نربط بين احتياجك والمعدة المناسبة من خلال فهم طبيعة العمل، مقارنة الخيارات، وتنظيم رحلة التوريد بأكبر قدر من الوضوح.',
       aboutImage: 'https://images.unsplash.com/photo-1504917595217-d4dc5ebe6122?auto=format&fit=crop&w=1200&q=85',
       aboutTag: 'خبرة تجارية',
       aboutTagBig: 'تبدأ من فهم احتياجك',
+      servicesNo: '02 / خدماتنا',
+      servicesTitleA: 'حلول متكاملة',
+      servicesTitleHL: 'تخدم أعمالك.',
+      servicesDesc: 'مجموعة خدمات مصممة لتسهيل قرارات الشراء والتوريد والتجارة في قطاع المعدات الثقيلة.',
+      productsNo: '03 / المعدات',
+      productsTitleA: 'معدات مصممة',
+      productsTitleHL: 'للعمل الشاق.',
+      processNo: '04 / آلية العمل',
+      processTitleA: 'رحلة بسيطة',
+      processTitleHL: 'ونتيجة واضحة.',
+      processDesc: 'من أول مكالمة إلى متابعة التسليم، نرتب الخطوات بشكل مفهوم وعملي.',
+      contactNo: '05 / تواصل معنا',
+      contactTitleA: 'جاهز تبدأ',
+      contactTitleHL: 'مشروعك القادم؟',
+      contactDesc: 'شاركنا احتياجك وسيتواصل معك فريقنا لمناقشة الخيارات المناسبة.',
       email: 'info@abojabal.com',
       phone: '+20 000 000 0000',
       address: 'القاهرة، مصر',
+      footerNote: 'جميع الحقوق محفوظة.',
       ticker: ['بيع المعدات', 'الاستيراد والتصدير', 'حلول المشروعات', 'قطع الغيار']
     },
     pages: [
@@ -60,6 +89,11 @@ function defaultData() {
       { id: 'st3', num: '03', title: 'نراجع وننسق', desc: 'تنسيق الفحص والمستندات والشحن والتفاصيل التجارية.', order: 3 },
       { id: 'st4', num: '04', title: 'نسلم ونتابع', desc: 'متابعة مراحل التسليم والدعم وفق نطاق الاتفاق.', order: 4 }
     ],
+    points: [
+      { id: 'pt1', num: '01', title: 'اختيار مدروس', desc: 'نراجع المواصفات والاستخدام المتوقع والميزانية قبل اقتراح الخيارات.', order: 1 },
+      { id: 'pt2', num: '02', title: 'تجارة دولية منظمة', desc: 'تنسيق مراحل الشراء والشحن والمستندات وفق نطاق كل صفقة.', order: 2 },
+      { id: 'pt3', num: '03', title: 'تواصل واضح', desc: 'متابعة مباشرة وتحديثات واضحة من أول طلب حتى مرحلة التسليم.', order: 3 }
+    ],
     messages: []
   };
 }
@@ -71,21 +105,41 @@ function ensure() {
   }
 }
 
+// دمج غير مدمر: أي حقل ناقص في الداتا القديمة يُستكمل من الافتراضي
+function migrate(data) {
+  const d = defaultData();
+  let changed = false;
+  if (!data.settings || typeof data.settings !== 'object') { data.settings = d.settings; changed = true; }
+  else {
+    for (const k of Object.keys(d.settings)) {
+      if (data.settings[k] === undefined) { data.settings[k] = d.settings[k]; changed = true; }
+    }
+  }
+  for (const k of ['pages', 'services', 'products', 'steps', 'points', 'messages']) {
+    if (!Array.isArray(data[k])) { data[k] = d[k]; changed = true; }
+  }
+  return changed;
+}
+
 function read() {
   ensure();
   const raw = fs.readFileSync(DB_FILE, 'utf8');
+  let data;
   try {
-    return JSON.parse(raw);
+    data = JSON.parse(raw);
   } catch {
-    const d = defaultData();
-    fs.writeFileSync(DB_FILE, JSON.stringify(d, null, 2), 'utf8');
-    return d;
+    data = defaultData();
+    fs.writeFileSync(DB_FILE, JSON.stringify(data, null, 2), 'utf8');
+    return data;
   }
+  if (migrate(data)) {
+    try { fs.writeFileSync(DB_FILE, JSON.stringify(data, null, 2), 'utf8'); } catch {}
+  }
+  return data;
 }
 
 function write(data) {
   ensure();
-  // كتابة غير مدمرة: نحفظ نسخة احتياطية قبل الكتابة
   try {
     if (fs.existsSync(DB_FILE)) {
       fs.copyFileSync(DB_FILE, DB_FILE + '.bak');
