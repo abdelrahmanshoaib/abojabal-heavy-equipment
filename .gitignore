@@ -7,3 +7,6 @@ backend/data/db.json
 backend/data/db.json.bak
 backend/uploads/*
 !backend/uploads/.gitkeep
+
+.vercel
+.env*
