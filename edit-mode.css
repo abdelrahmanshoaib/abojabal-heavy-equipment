@@ -1,0 +1,26 @@
+/* وضع التعديل المرئي — أبو جبل */
+#editFab{position:fixed;bottom:22px;left:22px;z-index:9990;border:1px solid rgba(198,243,106,.5);background:rgba(7,18,23,.9);color:#c6f36a;border-radius:100px;padding:12px 20px;font-family:inherit;font-size:13px;font-weight:800;cursor:pointer;backdrop-filter:blur(12px);box-shadow:0 10px 30px rgba(0,0,0,.4)}
+#editFab:hover{background:#c6f36a;color:#132019}
+#editBar{position:fixed;top:12px;right:50%;transform:translateX(50%);z-index:9995;display:flex;gap:10px;align-items:center;background:rgba(7,18,23,.95);border:1px solid rgba(198,243,106,.45);border-radius:100px;padding:8px 8px 8px 18px;font-family:'Almarai',sans-serif;font-size:12px;color:#fff;box-shadow:0 15px 40px rgba(0,0,0,.5);backdrop-filter:blur(14px);max-width:calc(100% - 24px);flex-wrap:wrap;justify-content:center}
+#editBar .dot{width:9px;height:9px;border-radius:50%;background:#c6f36a;box-shadow:0 0 12px #c6f36a;animation:blink 1.2s infinite}
+@keyframes blink{50%{opacity:.35}}
+#editBar button{border-radius:100px;padding:9px 18px;font-family:inherit;font-size:12px;font-weight:800;cursor:pointer;border:1px solid transparent}
+#editSave{background:#c6f36a;color:#132019}
+#editSave:disabled{opacity:.55;cursor:wait}
+#editCancel{background:transparent;color:#ff9c9c;border-color:rgba(255,120,120,.4)}
+#editStatus{color:#9aafb5}
+body.editing [data-editable]{outline:2px dashed rgba(198,243,106,.75);outline-offset:4px;border-radius:6px;cursor:text;transition:outline-color .2s}
+body.editing [data-editable]:hover,body.editing [data-editable]:focus{outline-color:#c6f36a;background:rgba(198,243,106,.07)}
+body.editing img[data-editable]{cursor:pointer}
+body.editing img[data-editable]:hover{filter:brightness(1.12)}
+#editModalWrap{position:fixed;inset:0;z-index:9999;display:grid;place-items:center;background:rgba(3,10,13,.7);backdrop-filter:blur(6px);padding:18px}
+#editModal{width:min(480px,100%);background:#0d2027;border:1px solid rgba(198,243,106,.4);border-radius:22px;padding:24px;font-family:'Almarai',sans-serif;color:#fff;display:grid;gap:12px}
+#editModal h3{margin:0;font-size:16px;color:#c6f36a}
+#editModal label{font-size:12px;color:#9aafb5;display:grid;gap:6px}
+#editModal input,#editModal textarea{width:100%;border:1px solid rgba(255,255,255,.15);background:rgba(0,0,0,.3);color:#fff;border-radius:12px;padding:11px 13px;font:inherit;font-size:13px}
+#editModal input:focus,#editModal textarea:focus{border-color:#c6f36a;outline:none}
+#editModal .row{display:flex;gap:10px}
+#editModal .row button{flex:1;border-radius:100px;padding:11px;font-family:inherit;font-size:13px;font-weight:800;cursor:pointer}
+#editOk{background:#c6f36a;color:#132019;border:0}
+#editNo{background:transparent;color:#fff;border:1px solid rgba(255,255,255,.2)}
+#editPreview{max-width:100%;border-radius:12px;border:1px solid rgba(255,255,255,.15)}

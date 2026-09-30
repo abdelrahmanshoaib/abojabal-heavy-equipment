@@ -90,8 +90,9 @@ function buildCustomPages(pages) {
 
 async function loadSite() {
   const d = await fetchSite();
-  if (!d) { setStatus(false); return; }
+  if (!d) { setStatus(false); document.dispatchEvent(new CustomEvent('site-loaded', { detail: null })); return; }
   setStatus(true);
+  window.__SITE__ = d;
   const s = d.settings || {};
 
   // SEO + لوجو + فوتر
@@ -153,7 +154,7 @@ async function loadSite() {
   if (s.aboutTagBig) { const el = document.getElementById('aboutTagBig'); if (el) el.textContent = s.aboutTagBig; }
   if (Array.isArray(d.points) && d.points.length) {
     const box = document.getElementById('aboutPoints');
-    if (box) box.innerHTML = d.points.map((x) => `<article class="point reveal visible"><span>${esc(x.num || '')}</span><div><h3>${esc(x.title)}</h3><p>${esc(x.desc || '')}</p></div></article>`).join('');
+    if (box) box.innerHTML = d.points.map((x) => `<article class="point reveal visible" data-col="points" data-id="${esc(x.id)}"><span>${esc(x.num || '')}</span><div><h3 data-field="title">${esc(x.title)}</h3><p data-field="desc">${esc(x.desc || '')}</p></div></article>`).join('');
   }
 
   // عناوين الأقسام
@@ -171,7 +172,7 @@ async function loadSite() {
   if (Array.isArray(d.services)) {
     const g = document.getElementById('servicesGrid');
     if (g) g.innerHTML = d.services.length
-      ? d.services.map((x) => `<article class="service glass reveal visible"><div class="service-icon">${esc(x.icon || '↗')}</div><small>${esc(x.num || '')}</small><h3>${esc(x.title)}</h3><p>${esc(x.desc || '')}</p><a href="#contact">${esc(x.link || 'اطلب التفاصيل ↗')}</a></article>`).join('')
+      ? d.services.map((x) => `<article class="service glass reveal visible" data-col="services" data-id="${esc(x.id)}"><div class="service-icon">${esc(x.icon || '↗')}</div><small>${esc(x.num || '')}</small><h3 data-field="title">${esc(x.title)}</h3><p data-field="desc">${esc(x.desc || '')}</p><a href="#contact">${esc(x.link || 'اطلب التفاصيل ↗')}</a></article>`).join('')
       : '<p>لا توجد خدمات حالياً.</p>';
     const sel = document.getElementById('serviceSelect');
     if (sel && d.services.length) sel.innerHTML = d.services.map((x) => `<option>${esc(x.title)}</option>`).join('');
@@ -182,7 +183,7 @@ async function loadSite() {
     buildFilters(d.products);
     const g = document.getElementById('productsGrid');
     if (g) g.innerHTML = d.products.length
-      ? d.products.map((x) => `<article class="product glass reveal visible" data-category="${esc(x.category || 'earth')}"><div class="product-media"><img loading="lazy" src="${esc(IMG(x.image))}" alt="${esc(x.title)}"><span>${esc(x.num || '')} / ${esc(x.catLabel || x.category || '')}</span><b>↗</b></div><div class="product-body"><h3>${esc(x.title)}</h3><p>${esc(x.desc || '')}</p><a href="#contact">اطلب عرض سعر ↗</a></div></article>`).join('')
+      ? d.products.map((x) => `<article class="product glass reveal visible" data-col="products" data-id="${esc(x.id)}" data-category="${esc(x.category || 'earth')}"><div class="product-media"><img loading="lazy" data-field="image" src="${esc(IMG(x.image))}" alt="${esc(x.title)}"><span>${esc(x.num || '')} / ${esc(x.catLabel || x.category || '')}</span><b>↗</b></div><div class="product-body"><h3 data-field="title">${esc(x.title)}</h3><p data-field="desc">${esc(x.desc || '')}</p><a href="#contact">اطلب عرض سعر ↗</a></div></article>`).join('')
       : '<p>لا توجد معدات حالياً.</p>';
     bindFilters();
   }
@@ -191,7 +192,7 @@ async function loadSite() {
   if (Array.isArray(d.steps)) {
     const g = document.getElementById('processGrid');
     if (g) g.innerHTML = d.steps.length
-      ? d.steps.map((x) => `<div class="process-step reveal visible"><span>${esc(x.num || '')}</span><h3>${esc(x.title)}</h3><p>${esc(x.desc || '')}</p></div>`).join('')
+      ? d.steps.map((x) => `<div class="process-step reveal visible" data-col="steps" data-id="${esc(x.id)}"><span>${esc(x.num || '')}</span><h3 data-field="title">${esc(x.title)}</h3><p data-field="desc">${esc(x.desc || '')}</p></div>`).join('')
       : '<p>لا خطوات بعد.</p>';
   }
 
@@ -200,6 +201,7 @@ async function loadSite() {
   if (lines[0] && s.email) lines[0].textContent = '✉ ' + s.email;
   if (lines[1] && s.phone) lines[1].textContent = '☎ ' + s.phone;
   if (lines[2] && s.address) lines[2].textContent = '⌖ ' + s.address;
+  document.dispatchEvent(new CustomEvent('site-loaded', { detail: d }));
 }
 loadSite();
 
