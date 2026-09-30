@@ -47,6 +47,11 @@
   const itemEdits = new Map(); // `${col}:${id}` -> {col,id,fields:{},els:[]}
 
   document.addEventListener('site-loaded', () => { siteReady = true; });
+  // تعليم العنصر المعدّل فعلياً — عند تكرار نفس الحقل (لوجو الهيدر/الفوتر) تُعتمد نسخة المستخدم
+  document.addEventListener('input', (e) => {
+    const t = e.target && e.target.closest ? e.target.closest('[data-editable]') : null;
+    if (t && editing) t.dataset.dirty = '1';
+  });
 
   function bases() {
     const s = (window.ABOJABAL_API || localStorage.getItem('abojabal_api') || '').replace(/\/$/, '');
@@ -373,12 +378,13 @@
 
   function collectSettings() {
     const body = {};
-    // نصوص مفردة من الـ DOM
-    const seen = new Set();
-    document.querySelectorAll('[data-skey]').forEach((el) => {
+    // نصوص مفردة من الـ DOM — المعدّل فعلياً (dirty) له الأولوية عند تكرار الحقل
+    const els = [...document.querySelectorAll('[data-skey]')]
+      .filter((el) => dirtySettings.has(el.dataset.skey));
+    els.sort((a, b) => ((b.dataset.dirty ? 1 : 0) - (a.dataset.dirty ? 1 : 0)));
+    els.forEach((el) => {
       const key = el.dataset.skey;
-      if (!dirtySettings.has(key) || seen.has(el)) return;
-      seen.add(el);
+      if (key in body) return;
       let v = el.textContent.replace(/\s+/g, ' ').trim();
       if (el.dataset.stripSym) v = v.replace(/^[✉☎⌖]\s*/u, '');
       if (key === 'heroPrimary' || key === 'heroSecondary') v = stripArrow(v);
