@@ -1,0 +1,97 @@
+<!doctype html>
+<html lang="ar" dir="rtl">
+<head>
+<meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1.0">
+<title>لوحة تحكم أبو جبل</title>
+<link href="https://fonts.googleapis.com/css2?family=Almarai:wght@400;700;800&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="admin.css">
+</head>
+<body>
+<div class="bg"></div>
+<!-- شاشة الدخول -->
+<div id="loginScreen" class="login-wrap">
+  <form id="loginForm" class="card login-card">
+    <div class="logo"><span>AJ</span><div><b>أبو جبل</b><small>لوحة التحكم</small></div></div>
+    <label>رابط السيرفر<input id="apiUrl" placeholder="http://localhost:3001" dir="ltr"></label>
+    <label>اسم المستخدم<input id="username" value="admin" autocomplete="username"></label>
+    <label>كلمة المرور<input id="password" type="password" placeholder="••••••••" autocomplete="current-password"></label>
+    <button class="btn primary" type="submit">دخول</button>
+    <p id="loginErr" class="err"></p>
+    <p class="hint">الافتراضي: admin / admin123 — غيّرها من ملف backend/.env</p>
+  </form>
+</div>
+<!-- اللوحة -->
+<div id="dash" class="dash hidden">
+  <aside class="side">
+    <div class="logo"><span>AJ</span><div><b>أبو جبل</b><small>إدارة الموقع</small></div></div>
+    <nav id="tabs">
+      <button data-tab="settings" class="active">⚙️ الإعدادات واللوجو</button>
+      <button data-tab="pages">📄 الصفحات</button>
+      <button data-tab="services">🧰 الخدمات</button>
+      <button data-tab="products">🚜 المعدات</button>
+      <button data-tab="steps">🪜 خطوات العمل</button>
+      <button data-tab="messages">✉️ الرسائل <b id="msgCount"></b></button>
+    </nav>
+    <button id="logout" class="btn ghost">خروج</button>
+    <a class="btn ghost" href="index.html">👁 عرض الموقع</a>
+  </aside>
+  <main class="main">
+    <header class="topbar"><h1 id="tabTitle">الإعدادات واللوجو</h1><button id="refresh" class="btn">↻ تحديث</button></header>
+    <p id="status" class="status"></p>
+    <!-- الإعدادات -->
+    <section id="tab-settings" class="panel">
+      <form id="settingsForm" class="card grid2">
+        <h3>الهوية واللوجو</h3>
+        <label>اسم الموقع<input name="siteName"></label>
+        <label>وصف تحت الاسم<input name="siteSub"></label>
+        <label>أيقونة اللوجو (حرفان)<input name="logoIcon" maxlength="4"></label>
+        <label>البريد<input name="email" dir="ltr"></label>
+        <label>الهاتف<input name="phone" dir="ltr"></label>
+        <label>العنوان<input name="address"></label>
+        <h3>الواجهة الرئيسية</h3>
+        <label>سطر صغير فوق العنوان<input name="heroEyebrow"></label>
+        <label>العنوان (جزء 1)<input name="heroTitleA"></label>
+        <label>العنوان (مميز بلون)<input name="heroTitleHL"></label>
+        <label>العنوان (جزء 2)<input name="heroTitleB"></label>
+        <label class="full">وصف الواجهة<textarea name="heroDesc" rows="3"></textarea></label>
+        <label class="full">صورة الواجهة (رابط أو ارفع بالأسفل)<input name="heroImage" dir="ltr"></label>
+        <label>تعليق صغير على الصورة<input name="heroCaptionSmall"></label>
+        <label>تعليق كبير على الصورة<input name="heroCaptionBig"></label>
+        <h3>قسم عن الشركة</h3>
+        <label>العنوان (جزء 1)<input name="aboutTitleA"></label>
+        <label>العنوان (مميز)<input name="aboutTitleHL"></label>
+        <label class="full">الوصف<textarea name="aboutDesc" rows="3"></textarea></label>
+        <label class="full">صورة القسم<input name="aboutImage" dir="ltr"></label>
+        <label>وسم الصورة<input name="aboutTag"></label>
+        <label>وسم كبير<input name="aboutTagBig"></label>
+        <label class="full">شريط متحرك (افصل بفاصلة ،)<input name="ticker"></label>
+        <div class="full row"><button class="btn primary" type="submit">💾 حفظ الإعدادات</button></div>
+      </form>
+      <div class="card"><h3>📤 رفع صورة جديدة</h3><div class="row"><input type="file" id="imgFile" accept="image/*"><button id="uploadBtn" class="btn">رفع</button></div><p class="hint">بعد الرفع انسخ الرابط والصقه في حقل الصورة. مثال: <code dir="ltr">/uploads/img-xxx.jpg</code></p><p id="uploadOut" class="hint"></p></div>
+    </section>
+    <!-- الصفحات -->
+    <section id="tab-pages" class="panel hidden">
+      <div class="card"><h3>➕ صفحة جديدة</h3><form id="pageForm" class="grid2"><label>العنوان<input name="title" required></label><label>الرابط (slug)<input name="slug" dir="ltr" placeholder="about"></label><label>الترتيب<input name="order" type="number" value="7"></label><label>ظاهرة؟<select name="visible"><option value="true">نعم</option><option value="false">مخفية</option></select></label><label class="full">المحتوى<textarea name="content" rows="3"></textarea></label><div class="full row"><button class="btn primary">إضافة</button></div></form></div>
+      <div id="pagesList" class="list"></div>
+    </section>
+    <!-- الخدمات -->
+    <section id="tab-services" class="panel hidden">
+      <div class="card"><h3>➕ خدمة جديدة</h3><form id="serviceForm" class="grid2"><label>الأيقونة (رمز)<input name="icon" value="↗"></label><label>الرقم<input name="num" value="05"></label><label>العنوان<input name="title" required></label><label>نص الرابط<input name="link" value="اطلب التفاصيل ↗"></label><label>الترتيب<input name="order" type="number" value="5"></label><label class="full">الوصف<textarea name="desc" rows="2"></textarea></label><div class="full row"><button class="btn primary">إضافة</button></div></form></div>
+      <div id="servicesList" class="list"></div>
+    </section>
+    <!-- المنتجات -->
+    <section id="tab-products" class="panel hidden">
+      <div class="card"><h3>➕ معدة جديدة</h3><form id="productForm" class="grid2"><label>الاسم<input name="title" required></label><label>الرقم<input name="num" value="05"></label><label>الفئة<select name="category"><option value="earth">حفر وتحميل</option><option value="build">إنشاءات</option><option value="transport">نقل</option></select></label><label>اسم الفئة<input name="catLabel" value="حفر وتحميل"></label><label class="full">الصورة (رابط)<input name="image" dir="ltr"></label><label>الترتيب<input name="order" type="number" value="5"></label><label class="full">الوصف<textarea name="desc" rows="2"></textarea></label><div class="full row"><button class="btn primary">إضافة</button></div></form></div>
+      <div id="productsList" class="list"></div>
+    </section>
+    <!-- الخطوات -->
+    <section id="tab-steps" class="panel hidden">
+      <div class="card"><h3>➕ خطوة جديدة</h3><form id="stepForm" class="grid2"><label>الرقم<input name="num" value="05"></label><label>العنوان<input name="title" required></label><label>الترتيب<input name="order" type="number" value="5"></label><label class="full">الوصف<textarea name="desc" rows="2"></textarea></label><div class="full row"><button class="btn primary">إضافة</button></div></form></div>
+      <div id="stepsList" class="list"></div>
+    </section>
+    <!-- الرسائل -->
+    <section id="tab-messages" class="panel hidden"><div id="messagesList" class="list"></div></section>
+  </main>
+</div>
+<script src="admin.js"></script>
+</body></html>

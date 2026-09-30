@@ -1,29 +1,51 @@
-# أبو جبل للمعدات الثقيلة | Abo Jabal Heavy Equipment
+# أبو جبل للمعدات الثقيلة | Abo Jabal Heavy Equipment + CMS
 
-موقع تعريفي عربي (RTL) لبيع واستيراد وتصدير المعدات الثقيلة.
+موقع تعريفي عربي (RTL) + باك-إند تحكم كامل.
 
-## المميزات
-- تصميم عربي كامل RTL بخط Almarai
-- أقسام: الرئيسية، عن الشركة، خدماتنا، المعدات (مع فلترة)، آلية العمل، تواصل
-- تأثيرات Glassmorphism + Animate on scroll (IntersectionObserver)
-- متجاوب بالكامل (موبايل / تابلت / ديسكتوب)
-- بدون أي مكتبات — HTML + CSS + JS فقط
+## 1) الموقع (فرونت)
+- `index.html` + `styles.css` + `script.js` — يعمل **بدون باك-إند** (محتوى ثابت fallback)
+- لو الباك شغال، `script.js` يجلب المحتوى تلقائياً من `GET /api/site` ويعيد رسم الخدمات/المنتجات/الخطوات/النصوص/الصور
+- فورم التواصل يحاول `POST /api/contact` أولاً، ولو مفيش باك يعرض رسالة تجريبية
 
-## التشغيل محلياً
-افتح `index.html` مباشرة في المتصفح، أو:
-```bash
-npx serve .
+## 2) الباك-إند (Node + Express)
 ```
+cd backend
+cp .env.example .env   # ثم عدّل ADMIN_USER / ADMIN_PASS / JWT_SECRET
+npm install
+npm start              # http://localhost:3001
+```
+- التخزين: `backend/data/db.json` (يتولد تلقائياً بأول تشغيل + نسخة `.bak` قبل كل حفظ)
+- الصور: `backend/uploads/` وتُعرض على `/uploads/xxx`
+- الصحة: `GET /health`
 
-## الأقسام
-- `01 / عن الشركة` — اختيار مدروس، تجارة دولية، تواصل واضح
-- `02 / خدماتنا` — بيع معدات، استيراد وتصدير، قطع غيار، استشارات
-- `03 / المعدات` — حفارات، لوادر، شاحنات ثقيلة، معدات إنشاءات (فلترة: all / earth / build / transport)
-- `04 / آلية العمل` — 4 خطوات من الاحتياج حتى التسليم
-- `05 / تواصل` — فورم تجريبي (يحتاج ربط backend لاستقبال فعلي)
+### API عام
+- `GET /api/site` — كل محتوى الموقع
+- `POST /api/contact` — `{name,email,service,message}` → يتخزن في الرسائل
 
-## ملاحظة
-فورم التواصل حالياً front-end فقط ويعرض رسالة تجريبية. لاستقبال حقيقي اربطه بـ API أو Formspree.
+### API أدمن (يحتاج `Authorization: Bearer <token>`)
+- `POST /api/admin/login` — `{username,password}`
+- `GET/PUT /api/admin/settings` — اللوجو والنصوص والصور وبيانات التواصل
+- `GET/POST /api/admin/pages` + `PUT/DELETE /api/admin/pages/:id` — إضافة/حذف/إخفاء الصفحات
+- نفس النمط لـ: `services` / `products` / `steps`
+- `GET /api/admin/messages` + `PUT .../read` + `DELETE ...`
+- `POST /api/admin/upload` — form-data باسم `image` (صور فقط، حد 5MB)
 
-## Live Demo
-فعّل GitHub Pages من Settings → Pages → Branch: main → `/ (root)` وافتح الرابط.
+## 3) لوحة التحكم
+- افتح `admin.html` في المتصفح
+- اكتب رابط السيرفر (مثال `http://localhost:3001`) + الدخول `admin / admin123`
+- من اللوحة تقدر:
+  - تغيير اللوجو (الاسم + الوصف + الأيقونة) وكل النصوص والصور
+  - رفع صور جديدة ونسخ رابطها
+  - إضافة/تعديل/حذف: صفحات، خدمات، معدات، خطوات العمل
+  - قراءة وحذف رسائل الزوار
+  - إخفاء أي قسم من الموقع بدون حذفه (`ظاهرة؟ = مخفية`)
+
+## 4) النشر
+- الفرونت يترفع على GitHub Pages عادي
+- الباك يشتغل على أي VPS: `node backend/src/server.js` أو `pm2 start backend/src/server.js --name abojabal`
+- غيّر `window.ABOJABAL_API` في `index.html` لرابط السيرفر الإنتاجي
+
+## الأمان
+- Helmet + CORS + Rate-limit على تسجيل الدخول والفورم
+- JWT 12 ساعة + bcrypt لكلمة المرور
+- تنقية نصوص من `<script>` و `on*=`
