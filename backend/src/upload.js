@@ -2,8 +2,12 @@ const path = require('path');
 const fs = require('fs');
 const multer = require('multer');
 
-const UP_DIR = path.join(__dirname, '..', 'uploads');
-if (!fs.existsSync(UP_DIR)) fs.mkdirSync(UP_DIR, { recursive: true });
+const UP_DIR = process.env.VERCEL ? path.join('/tmp', 'uploads') : path.join(__dirname, '..', 'uploads');
+try {
+  if (!fs.existsSync(UP_DIR)) fs.mkdirSync(UP_DIR, { recursive: true });
+} catch {
+  // بيئات القراءة فقط (Vercel): الرفع مرفوض برسالة واضحة من الـ route
+}
 
 const storage = multer.diskStorage({
   destination: (req, file, cb) => cb(null, UP_DIR),

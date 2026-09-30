@@ -30,7 +30,12 @@ app.use('/api', publicRoutes);
 app.use('/api/admin', adminRoutes);
 
 // رفع الصور (أدمن فقط) → يرجع رابط /uploads/xxx
-app.post('/api/admin/upload', requireAdmin, upload.single('image'), (req, res) => {
+// على Vercel: الرفع مرفوض بوضوح (لا تخزين دائم) بدل فشل غامض
+const refuseUploadOnReadonly = (req, res, next) => {
+  if (process.env.VERCEL) return res.status(503).json({ error: 'رفع الصور غير متاح على استضافة Vercel (قراءة فقط) — استخدم رابط صورة خارجي أو سيرفر دائم.' });
+  next();
+};
+app.post('/api/admin/upload', requireAdmin, refuseUploadOnReadonly, upload.single('image'), (req, res) => {
   if (!req.file) return res.status(400).json({ error: 'اختر صورة أولاً' });
   res.json({ ok: true, url: '/uploads/' + req.file.filename });
 });
