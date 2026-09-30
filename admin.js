@@ -1,7 +1,13 @@
 /* لوحة تحكم أبو جبل — تتصل بالباك على API_URL */
 const $ = (s, r) => (r || document).querySelector(s);
 const $$ = (s, r) => [...(r || document).querySelectorAll(s)];
-let API = localStorage.getItem('abojabal_api') || (window.location.protocol.startsWith('http') ? window.location.origin : 'http://localhost:3001');
+let savedAPI = localStorage.getItem('abojabal_api') || '';
+// تجاهل أي رابط http:// قديم عند فتح اللوحة عبر https (المتصفح يمنعه أساساً)
+if (window.location.protocol === 'https:' && savedAPI.startsWith('http://')) {
+  savedAPI = '';
+  try { localStorage.removeItem('abojabal_api'); } catch {}
+}
+let API = savedAPI || (window.location.protocol.startsWith('http') ? window.location.origin : 'http://localhost:3001');
 let TOKEN = localStorage.getItem('abojabal_token') || '';
 
 $('#apiUrl').value = API;
@@ -39,7 +45,12 @@ $('#loginForm').addEventListener('submit', async (e) => {
     TOKEN = d.token;
     localStorage.setItem('abojabal_token', TOKEN);
     showDash();
-  } catch (err) { $('#loginErr').textContent = err.message; }
+  } catch (err) {
+    const msg = /fetch|network|load/i.test(err.message)
+      ? 'تعذر الاتصال بالسيرفر — تأكد أن رابط السيرفر يبدأ بـ https ومطابق لرابط الموقع'
+      : err.message;
+    $('#loginErr').textContent = msg;
+  }
 });
 
 function showDash() {
