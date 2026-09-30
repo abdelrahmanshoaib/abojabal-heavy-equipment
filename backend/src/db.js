@@ -10,6 +10,11 @@ const path = require('path');
 const DATA_DIR = path.join(__dirname, '..', 'data');
 const DB_FILE = path.join(DATA_DIR, 'db.json');
 
+// وضع القراءة فقط (استضافات serverless مثل Vercel نظام ملفاتها لا يقبل الكتابة الدائمة)
+const READONLY = !!process.env.VERCEL;
+const READONLY_MSG = 'التخزين الدائم غير متاح على استضافة Vercel (قراءة فقط) — استضف الباك-إند على سيرفر دائم (VPS/Render) للتعديل واستقبال الرسائل.';
+let memCache = null;
+
 function defaultData() {
   return {
     settings: {
@@ -122,6 +127,11 @@ function migrate(data) {
 }
 
 function read() {
+  if (READONLY) {
+    // نسخة جديدة في كل مرة حتى لا تلتصق تعديلات مؤقتة بالذاكرة
+    if (!memCache) memCache = defaultData();
+    return JSON.parse(JSON.stringify(memCache));
+  }
   ensure();
   const raw = fs.readFileSync(DB_FILE, 'utf8');
   let data;
@@ -139,6 +149,7 @@ function read() {
 }
 
 function write(data) {
+  if (READONLY) throw new Error(READONLY_MSG);
   ensure();
   try {
     if (fs.existsSync(DB_FILE)) {

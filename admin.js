@@ -1,7 +1,7 @@
 /* لوحة تحكم أبو جبل — تتصل بالباك على API_URL */
 const $ = (s, r) => (r || document).querySelector(s);
 const $$ = (s, r) => [...(r || document).querySelectorAll(s)];
-let API = localStorage.getItem('abojabal_api') || 'http://localhost:3001';
+let API = localStorage.getItem('abojabal_api') || (window.location.protocol.startsWith('http') ? window.location.origin : 'http://localhost:3001');
 let TOKEN = localStorage.getItem('abojabal_token') || '';
 
 $('#apiUrl').value = API;

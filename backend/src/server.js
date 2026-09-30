@@ -14,6 +14,9 @@ const { upload } = require('./upload');
 const app = express();
 const PORT = process.env.PORT || 3001;
 
+// ضروري خلف البروكسي (Vercel/Nginx) حتى يعمل الـ rate-limit بعنوان IP الصحيح
+app.set('trust proxy', 1);
+
 app.use(helmet({ crossOriginResourcePolicy: { policy: 'cross-origin' } }));
 app.use(cors({ origin: true }));
 app.use(express.json({ limit: '1mb' }));

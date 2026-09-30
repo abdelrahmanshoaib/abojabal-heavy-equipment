@@ -1,6 +1,10 @@
-# ملفات لا تُرفع على Vercel (الموقع static فقط — الباك-إند يُستضاف separately)
-backend/
+# ملفات لا تُرفع على Vercel (كود السيرفر يُرفع، لكن الداتا والرفوعات محلية فقط)
+backend/data/
+backend/uploads/
+backend/node_modules/
+node_modules/
 scripts/
 .github/
 *.zip
 .gitignore
+backend/.env
