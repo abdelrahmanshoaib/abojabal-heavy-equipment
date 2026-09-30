@@ -43,9 +43,10 @@ npm start              # http://localhost:3001
   - إخفاء أي قسم من الموقع بدون حذفه (`ظاهرة؟ = مخفية`)
 
 ## 4) النشر
-- الفرونت يترفع على GitHub Pages عادي (يشتغل ثابت)
-- الباك يشتغل على أي VPS: `node backend/src/server.js` أو `pm2 start backend/src/server.js --name abojabal` — وهو يقدم الموقع + اللوحة + API معاً
-- للإنتاج غيّر رابط واحد فقط في `config.js`: `window.ABOJABAL_API = 'https://yourdomain.com'`
+- **Vercel (الفرونت فقط):** الريبو جاهز — `vercel.json` يقدّم الموقع static و `.vercelignore` يستبعد ملفات السيرفر. بدون أي إعدادات إضافية: كل push على `main` يعيد النشر تلقائياً والموقع يعرض كامل المحتوى (fallback ثابت).
+  - مهم: Vercel serverless نظام ملفاته للقراءة فقط، لذلك الباك-إند (الحفظ/الرفع) **لا يعمل عليه** — الموقع سيعمل بالمحتوى الثابت فقط.
+- **الباك-إند (سيرفر دائم):** يشتغل على أي VPS أو Render/Railway: `node backend/src/server.js` أو `pm2 start backend/src/server.js --name abojabal` — وهو يقدم الموقع + اللوحة + API معاً.
+- بعد استضافة الباك، غيّر رابط واحد فقط في `config.js`: `window.ABOJABAL_API = 'https://yourdomain.com'` وادفع — فيرسل يعيد النشر والموقع يبقى مربوطاً بالباك تلقائياً.
 
 ## الأمان
 - Helmet + CORS + Rate-limit على تسجيل الدخول والفورم

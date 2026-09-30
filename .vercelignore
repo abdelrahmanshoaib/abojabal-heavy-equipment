@@ -1,0 +1,6 @@
+# ملفات لا تُرفع على Vercel (الموقع static فقط — الباك-إند يُستضاف separately)
+backend/
+scripts/
+.github/
+*.zip
+.gitignore
