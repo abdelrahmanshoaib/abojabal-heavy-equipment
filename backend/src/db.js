@@ -10,10 +10,11 @@ const path = require('path');
 const DATA_DIR = path.join(__dirname, '..', 'data');
 const DB_FILE = path.join(DATA_DIR, 'db.json');
 
-// وضع القراءة فقط (استضافات serverless مثل Vercel نظام ملفاتها لا يقبل الكتابة الدائمة)
-const READONLY = !!process.env.VERCEL;
-const READONLY_MSG = 'التخزين الدائم غير متاح على استضافة Vercel (قراءة فقط) — استضف الباك-إند على سيرفر دائم (VPS/Render) للتعديل واستقبال الرسائل.';
-let memCache = null;
+// وضع Vercel: القراءة من ملف المحتوى المضمّن، والكتابة عبر GitHub API (commit تلقائي)
+// محلياً: ملف backend/data/db.json كالمعتاد
+const IS_VERCEL = !!process.env.VERCEL;
+const SITE_FILE = path.join(__dirname, '..', '..', 'content', 'site.json');
+const NO_TOKEN_MSG = 'الحفظ على Vercel يحتاج GITHUB_TOKEN — أضفه في Vercel → Settings → Environment Variables ثم Redeploy';
 
 function defaultData() {
   return {
@@ -126,12 +127,16 @@ function migrate(data) {
   return changed;
 }
 
-function read() {
-  if (READONLY) {
-    // نسخة جديدة في كل مرة حتى لا تلتصق تعديلات مؤقتة بالذاكرة
-    if (!memCache) memCache = defaultData();
-    return JSON.parse(JSON.stringify(memCache));
+function readBundled() {
+  try {
+    return JSON.parse(fs.readFileSync(SITE_FILE, 'utf8'));
+  } catch {
+    return defaultData();
   }
+}
+
+function read() {
+  if (IS_VERCEL) return readBundled();
   ensure();
   const raw = fs.readFileSync(DB_FILE, 'utf8');
   let data;
@@ -149,7 +154,7 @@ function read() {
 }
 
 function write(data) {
-  if (READONLY) throw new Error(READONLY_MSG);
+  if (IS_VERCEL) throw new Error(NO_TOKEN_MSG + ' (استخدم writeAsync)');
   ensure();
   try {
     if (fs.existsSync(DB_FILE)) {
@@ -159,8 +164,27 @@ function write(data) {
   fs.writeFileSync(DB_FILE, JSON.stringify(data, null, 2), 'utf8');
 }
 
+/** كتابة غير متزامنة: محلياً ملف، وعلى Vercel commit في الريبو (لا تنشر الرسائل publicly أبداً) */
+async function writeAsync(data) {
+  if (!IS_VERCEL) {
+    write(data);
+    return { mode: 'file' };
+  }
+  if (!process.env.GITHUB_TOKEN) {
+    throw Object.assign(new Error(NO_TOKEN_MSG), { code: 'PERSIST_UNAVAILABLE' });
+  }
+  const { putFile } = require('./githubStore');
+  const clean = { ...data, messages: [] };
+  await putFile(
+    'content/site.json',
+    JSON.stringify(clean, null, 2),
+    `تحديث المحتوى عبر اللوحة — ${new Date().toISOString()}`
+  );
+  return { mode: 'github' };
+}
+
 function uid(prefix) {
   return (prefix || 'id') + '-' + Date.now().toString(36) + '-' + Math.random().toString(36).slice(2, 7);
 }
 
-module.exports = { read, write, uid };
+module.exports = { read, write, writeAsync, uid, defaultData };

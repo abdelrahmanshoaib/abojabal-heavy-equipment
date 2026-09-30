@@ -50,7 +50,10 @@ npm start              # http://localhost:3001
 
 ## 4) النشر
 - **Vercel (فرونت + API):** الريبو جاهز — `vercel.json` يقدّم الموقع static ويوجّه `/api/*` لدالة `api/index.js` (نفس كود Express). الموقع يقرأ المحتوى والداشبورد يسجّل الدخول (`admin / admin123`) مباشرة بدون سيرفر محلي.
-  - مهم: Vercel serverless نظام ملفاته للقراءة فقط، لذلك **الحفظ/الرفع/الرسائل مرفوضة برسالة واضحة** — القراءة والدخول يعملان، والتعديل الدائم يحتاج سيرفر دائم أدناه.
+- **تفعيل الحفظ على Vercel (دقيقتان، مرة واحدة):** الريبو نفسه هو قاعدة البيانات — أي حفظ من اللوحة/الوضع المرئي يعمل commit تلقائي في `content/site.json` وفيرسل يعيد النشر خلال دقيقة:
+  1. GitHub → Settings → Developer settings → Personal access tokens → Fine-grained → اختر الريبو فقط → صلاحية **Contents: Read and write** → انسخ التوكن.
+  2. Vercel → المشروع → Settings → Environment Variables → أضف: `GITHUB_TOKEN` (التوكن)، `GITHUB_REPO` (مثال `abdelrahmanshoaib/abojabal-heavy-equipment`)، واختياري `ADMIN_USER`/`ADMIN_PASS`/`JWT_SECRET` بكلمة قوية → **Redeploy**.
+  - بدون التوكن: القراءة والدخول يعملان، والحفظ يرد برسالة واضحة. رسائل الزوار لا تُنشر في الريبو العام عمداً — الفورم يعرض بيانات التواصل المباشر بدلاً منها.
 - **الباك-إند (سيرفر دائم):** يشتغل على أي VPS أو Render/Railway: `node backend/src/server.js` أو `pm2 start backend/src/server.js --name abojabal` — وهو يقدم الموقع + اللوحة + API معاً.
 - بعد استضافة الباك، غيّر رابط واحد فقط في `config.js`: `window.ABOJABAL_API = 'https://yourdomain.com'` وادفع — فيرسل يعيد النشر والموقع يبقى مربوطاً بالباك تلقائياً.
 

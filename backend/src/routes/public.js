@@ -20,19 +20,33 @@ router.get('/site', (req, res) => {
   });
 });
 
-// POST /api/contact — استقبال رسائل الزوار (عام)
-router.post('/contact', (req, res) => {
+// POST /api/contact — استقبال رسائل الزوار
+// على Vercel: مرفوض عمداً (لا صندوق بريد دائم ولا نشر لبيانات الزوار في ريبو عام)
+// → نرجع بيانات التواصل المباشر ليعرضها الموقع
+router.post('/contact', async (req, res) => {
   const { name, email: em, service, message } = req.body || {};
   const n = str(name, 120);
   const e = email(em);
   const m = str(message, 3000);
   const s = str(service, 120);
   if (!n || !e || !m) return res.status(400).json({ error: 'الاسم والبريد والرسالة مطلوبة' });
-  const d = db.read();
-  d.messages = d.messages || [];
-  d.messages.unshift({ id: db.uid('msg'), name: n, email: e, service: s, message: m, date: new Date().toISOString(), read: false });
-  db.write(d);
-  res.json({ ok: true, message: 'تم استلام طلبك بنجاح وسنتواصل معك قريباً.' });
+  if (process.env.VERCEL) {
+    const st = db.read().settings || {};
+    return res.status(503).json({
+      error: 'الاستقبال التلقائي غير متاح حالياً — تواصل معنا مباشرة',
+      code: 'PERSIST_UNAVAILABLE',
+      contact: { email: st.email || '', phone: st.phone || '' }
+    });
+  }
+  try {
+    const d = db.read();
+    d.messages = d.messages || [];
+    d.messages.unshift({ id: db.uid('msg'), name: n, email: e, service: s, message: m, date: new Date().toISOString(), read: false });
+    await db.writeAsync(d);
+    res.json({ ok: true, message: 'تم استلام طلبك بنجاح وسنتواصل معك قريباً.' });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
 });
 
 module.exports = router;

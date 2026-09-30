@@ -4,7 +4,6 @@
   "trailingSlash": false,
   "rewrites": [
     { "source": "/admin", "destination": "/admin.html" },
-    { "source": "/api/(.*)", "destination": "/api/index" },
-    { "source": "/uploads/(.*)", "destination": "/api/index" }
+    { "source": "/api/(.*)", "destination": "/api/index" }
   ]
 }

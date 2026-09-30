@@ -212,11 +212,15 @@ document.getElementById('contactForm')?.addEventListener('submit', async (e) => 
   const status = f.querySelector('.form-status');
   const data = { name: f.name.value, email: f.email.value, service: f.service.value, message: f.message.value };
   status.textContent = 'جارٍ الإرسال...';
+  let direct = null;
   for (const base of resolveBases()) {
     try {
       const r = await fetch(base + '/api/contact', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(data) });
-      const dd = await r.json();
-      if (!r.ok) throw new Error(dd.error || 'فشل');
+      const dd = await r.json().catch(() => ({}));
+      if (!r.ok) {
+        if (dd && dd.code === 'PERSIST_UNAVAILABLE' && dd.contact) direct = dd.contact;
+        throw new Error(dd.error || 'فشل');
+      }
       API_BASE = base;
       setStatus(true);
       status.textContent = dd.message || 'تم الإرسال بنجاح ✅';
@@ -226,6 +230,8 @@ document.getElementById('contactForm')?.addEventListener('submit', async (e) => 
     } catch {}
   }
   setStatus(false);
-  status.textContent = 'تعذر الاتصال بالسيرفر — تحقق أنه يعمل على ' + (window.ABOJABAL_API || 'http://localhost:3001');
+  status.textContent = direct && (direct.email || direct.phone)
+    ? `تواصل معنا مباشرة: ${direct.email || ''} ${direct.phone || ''}`.trim()
+    : 'تعذر الاتصال بالسيرفر — تحقق أنه يعمل على ' + (window.ABOJABAL_API || 'http://localhost:3001');
   status.style.color = '#ff9c9c';
 });

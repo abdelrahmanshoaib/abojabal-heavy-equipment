@@ -7,17 +7,32 @@ const router = express.Router();
 
 // POST /api/admin/login
 router.post('/login', async (req, res) => {
-  const { username, password } = req.body || {};
-  const token = await login(str(username, 100), String(password || ''));
-  if (!token) return res.status(401).json({ error: 'بيانات الدخول غير صحيحة' });
-  res.json({ ok: true, token });
+  try {
+    const { username, password } = req.body || {};
+    const token = await login(str(username, 100), String(password || ''));
+    if (!token) return res.status(401).json({ error: 'بيانات الدخول غير صحيحة' });
+    res.json({ ok: true, token });
+  } catch (e) {
+    res.status(500).json({ error: e.message });
+  }
 });
 
 router.use(requireAdmin);
 
+// حفظ موحد: يرجع deployed=file|github أو خطأ واضح
+async function persist(res, data, okPayload) {
+  try {
+    const r = await db.writeAsync(data);
+    res.json({ ...okPayload, deployed: r.mode });
+  } catch (e) {
+    const code = e.code || (/GITHUB_TOKEN|Vercel/.test(e.message) ? 'PERSIST_UNAVAILABLE' : 'SAVE_FAILED');
+    res.status(code === 'PERSIST_UNAVAILABLE' ? 503 : 500).json({ error: e.message, code });
+  }
+}
+
 // ---- SETTINGS ----
 router.get('/settings', (req, res) => res.json(db.read().settings));
-router.put('/settings', (req, res) => {
+router.put('/settings', async (req, res) => {
   const d = db.read();
   const b = req.body || {};
   const keys = ['siteName', 'siteSub', 'logoIcon', 'siteTitle', 'metaDesc', 'heroEyebrow', 'heroTitleA', 'heroTitleHL', 'heroTitleB', 'heroDesc', 'heroCaptionSmall', 'heroCaptionBig', 'heroPrimary', 'heroSecondary', 'floatingSmall', 'floatingBig', 'aboutNo', 'aboutTitleA', 'aboutTitleHL', 'aboutDesc', 'aboutTag', 'aboutTagBig', 'servicesNo', 'servicesTitleA', 'servicesTitleHL', 'servicesDesc', 'productsNo', 'productsTitleA', 'productsTitleHL', 'processNo', 'processTitleA', 'processTitleHL', 'processDesc', 'contactNo', 'contactTitleA', 'contactTitleHL', 'contactDesc', 'email', 'phone', 'address', 'footerNote'];
@@ -25,35 +40,31 @@ router.put('/settings', (req, res) => {
   ['heroImage', 'aboutImage'].forEach((k) => { if (b[k] !== undefined) d.settings[k] = url(b[k]) || d.settings[k]; });
   if (Array.isArray(b.ticker)) d.settings.ticker = b.ticker.map((t) => str(t, 100)).filter(Boolean).slice(0, 12);
   if (Array.isArray(b.trust)) d.settings.trust = b.trust.map((t) => ({ n: str(t.n || t.num || '', 10), t: str(t.t || t.label || t.title || '', 100) })).filter((x) => x.t).slice(0, 6);
-  db.write(d);
-  res.json({ ok: true, settings: d.settings });
+  await persist(res, d, { ok: true, settings: d.settings });
 });
 
 // ---- generic CRUD helper ----
 function crud(key, map) {
   return {
     list: (req, res) => res.json(db.read()[key] || []),
-    create: (req, res) => {
+    create: async (req, res) => {
       const d = db.read();
       const item = { id: db.uid(key), ...map(req.body || {}) };
       d[key] = d[key] || [];
       d[key].push(item);
-      db.write(d);
-      res.json({ ok: true, item });
+      await persist(res, d, { ok: true, item });
     },
-    update: (req, res) => {
+    update: async (req, res) => {
       const d = db.read();
       const i = (d[key] || []).findIndex((x) => x.id === req.params.id);
       if (i < 0) return res.status(404).json({ error: 'غير موجود' });
       d[key][i] = { ...d[key][i], ...map(req.body || {}) };
-      db.write(d);
-      res.json({ ok: true, item: d[key][i] });
+      await persist(res, d, { ok: true, item: d[key][i] });
     },
-    remove: (req, res) => {
+    remove: async (req, res) => {
       const d = db.read();
       d[key] = (d[key] || []).filter((x) => x.id !== req.params.id);
-      db.write(d);
-      res.json({ ok: true });
+      await persist(res, d, { ok: true });
     }
   };
 }
@@ -96,20 +107,18 @@ router.put('/steps/:id', steps.update); router.delete('/steps/:id', steps.remove
 router.get('/points', points.list); router.post('/points', points.create);
 router.put('/points/:id', points.update); router.delete('/points/:id', points.remove);
 
-// ---- MESSAGES inbox ----
+// ---- MESSAGES inbox (محلياً فقط — على Vercel تُرفض حمايةً لخصوصية الزوار) ----
 router.get('/messages', (req, res) => res.json(db.read().messages || []));
-router.put('/messages/:id/read', (req, res) => {
+router.put('/messages/:id/read', async (req, res) => {
   const d = db.read();
   const m = (d.messages || []).find((x) => x.id === req.params.id);
   if (m) m.read = true;
-  db.write(d);
-  res.json({ ok: true });
+  await persist(res, d, { ok: true });
 });
-router.delete('/messages/:id', (req, res) => {
+router.delete('/messages/:id', async (req, res) => {
   const d = db.read();
   d.messages = (d.messages || []).filter((x) => x.id !== req.params.id);
-  db.write(d);
-  res.json({ ok: true });
+  await persist(res, d, { ok: true });
 });
 
 module.exports = router;

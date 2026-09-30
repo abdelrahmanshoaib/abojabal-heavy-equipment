@@ -423,19 +423,26 @@
     btn.disabled = true;
     try {
       const body = collectSettings();
-      let n = 0;
+      let n = 0, viaGithub = false;
       if (Object.keys(body).length) {
         status('جارٍ حفظ النصوص والصور...');
-        await api('/api/admin/settings', { method: 'PUT', headers: authH(), body: JSON.stringify(body) });
+        const r = await api('/api/admin/settings', { method: 'PUT', headers: authH(), body: JSON.stringify(body) });
+        if (r.deployed === 'github') viaGithub = true;
         n++;
       }
       for (const { col, id, fields } of itemEdits.values()) {
         if (!Object.keys(fields).length) continue;
         status(`جارٍ حفظ ${col}...`);
-        await api(`/api/admin/${col}/${id}`, { method: 'PUT', headers: authH(), body: JSON.stringify(fields) });
+        const r = await api(`/api/admin/${col}/${id}`, { method: 'PUT', headers: authH(), body: JSON.stringify(fields) });
+        if (r.deployed === 'github') viaGithub = true;
         n++;
       }
       if (!n) { status('لا توجد تعديلات للحفظ'); btn.disabled = false; return; }
+      if (viaGithub) {
+        status('اتحفظ ✅ — بيتنشر على الموقع خلال دقيقة، حدّث الصفحة بعدها');
+        btn.disabled = false;
+        return;
+      }
       status('تم الحفظ بنجاح ✅ جارٍ التحديث...');
       setTimeout(() => location.reload(), 900);
     } catch (e) {
