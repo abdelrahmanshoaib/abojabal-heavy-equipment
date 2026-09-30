@@ -1,0 +1,11 @@
+{
+  "name": "abojabal-site",
+  "version": "1.0.0",
+  "private": true,
+  "description": "موقع أبو جبل + باك-إند — رفع تلقائي على GitHub",
+  "scripts": {
+    "autopush": "node scripts/autopush.js",
+    "push-now": "git add -A && git commit -m \"تحديث يدوي\" && git push origin main",
+    "backend": "npm --prefix backend start"
+  }
+}

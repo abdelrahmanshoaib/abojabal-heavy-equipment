@@ -1,0 +1,38 @@
+name: Deploy AboJabal site
+
+on:
+  push:
+    branches: [main]
+
+jobs:
+  # فحص سريع أن ملفات الباك سليمة
+  check-backend:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+      - run: node --check backend/src/server.js
+      - run: node --check backend/src/db.js
+      - run: node --check script.js
+      - run: node --check admin.js
+
+  # نشر الفرونت على GitHub Pages تلقائياً
+  pages:
+    needs: check-backend
+    runs-on: ubuntu-latest
+    permissions:
+      pages: write
+      id-token: write
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/configure-pages@v4
+      - uses: actions/upload-pages-artifact@v3
+        with:
+          path: .
+      - id: deployment
+        uses: actions/deploy-pages@v4
