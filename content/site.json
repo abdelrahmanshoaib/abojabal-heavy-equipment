@@ -150,16 +150,6 @@
       "desc": "مقارنة البدائل وتحديد الاحتياجات الفنية والتجارية قبل اتخاذ قرار الشراء.",
       "link": "اطلب استشارة ↗",
       "order": 4
-    },
-    {
-      "id": "services-mupixb57-rzng9",
-      "icon": "T",
-      "num": "99",
-      "title": "TEMP-SVC-2",
-      "desc": "TEMP-DESC",
-      "link": "TEMP-LINK",
-      "linkUrl": "#products",
-      "order": 99
     }
   ],
   "products": [
