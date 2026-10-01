@@ -1,6 +1,13 @@
 /* وضع التعديل المرئي — عدّل النصوص والصور على الموقع مباشرة ثم اضغط (تم وحفظ) */
 (function () {
   'use strict';
+  // زر التعديل يظهر فقط للقادم من الداشبورد (?edit=1) — الزائر الطبيعي لا يرى شيئاً
+  const _params = new URLSearchParams(window.location.search);
+  let _allowEdit = _params.get('edit') === '1';
+  try {
+    if (!_allowEdit && localStorage.getItem('abojabal_edit') === '1') _allowEdit = true;
+  } catch {}
+  if (!_allowEdit) return;
   const esc = (s) => String(s ?? '').replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
 
   // نصوص مفردة: [selector, settingsKey, تنظيف عند الحفظ]
