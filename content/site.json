@@ -156,22 +156,22 @@
     {
       "id": "p1",
       "category": "earth",
-      "catLabel": "",
-      "num": "",
-      "title": "الحفارات  الجامدة",
-      "desc": "للحفر وتجهيز المواقع وأعمال البنية التحتية.  الجامده",
-      "image": "",
-      "order": 0
+      "catLabel": "حفر وتحميل",
+      "num": "01",
+      "title": "الحفارات",
+      "desc": "للحفر وتجهيز المواقع وأعمال البنية التحتية.",
+      "image": "https://images.unsplash.com/photo-1579412690850-bd41cd0af397?auto=format&fit=crop&w=1000&q=85",
+      "order": 1
     },
     {
       "id": "p2",
       "category": "earth",
-      "catLabel": "حفر وتحميل",
-      "num": "02",
-      "title": "اللوادر",
-      "desc": "للتحميل ونقل المواد داخل مواقع التشغيل.",
-      "image": "https://images.unsplash.com/photo-1557804506-669a67965ba0?auto=format&fit=crop&w=1000&q=85",
-      "order": 2
+      "catLabel": "",
+      "num": "",
+      "title": "اللوادر  الفشيخ",
+      "desc": "للتحميل ونقل المواد داخل مواقع التشغيل.  الفشيخ جدا",
+      "image": "",
+      "order": 0
     },
     {
       "id": "p3",
