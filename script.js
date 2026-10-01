@@ -88,8 +88,8 @@ function buildFilters(products) {
 function buildCustomPages(pages) {
   const box = document.getElementById('customPages');
   if (!box) return;
-  const custom = (pages || []).filter((p) => !KNOWN[p.slug] && !KNOWN[p.id] && p.content);
-  box.innerHTML = custom.map((p) => `<section id="${esc(p.slug || p.id)}" class="section wrap"><div class="section-top reveal visible"><div><span class="section-no">${esc(p.title)}</span><h2>${esc(p.title)}</h2></div></div><div class="card" style="padding:24px;border-radius:20px"><p style="white-space:pre-wrap;margin:0">${esc(p.content)}</p></div></section>`).join('');
+  const custom = (pages || []).filter((p) => !KNOWN[p.slug] && !KNOWN[p.id] && (p.content || p.contentType === 'html'));
+  box.innerHTML = custom.map((p) => `<section id="${esc(p.slug || p.id)}" class="section wrap"><div class="section-top reveal visible"><div><span class="section-no">${esc(p.title)}</span><h2>${esc(p.title)}</h2></div></div><div class="card" style="padding:24px;border-radius:20px">${p.contentType === 'html' ? p.content : `<p style="white-space:pre-wrap;margin:0">${esc(p.content || '')}</p>`}</div></section>`).join('');
 }
 
 async function loadSite() {

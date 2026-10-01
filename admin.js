@@ -122,13 +122,14 @@ async function renderMenuPages() {
   arr.forEach((p) => {
     const div = document.createElement('div');
     div.className = 'item';
-    div.innerHTML = `<b>${esc(p.title)} <span class="meta">/${esc(p.slug)} • ترتيب ${p.order ?? 0} • ${p.visible === false ? 'مخفية' : 'ظاهرة'}</span></b>
+    div.innerHTML = `<b>${esc(p.title)} <span class="meta">/${esc(p.slug)} • ترتيب ${p.order ?? 0} • ${p.visible === false ? 'مخفية' : 'ظاهرة'} • ${p.contentType === 'html' ? 'كود' : 'نص'}</span></b>
       <div class="grid2">
         <label>العنوان<input data-f="title" value="${esc(p.title)}"></label>
         <label>الرابط (slug)<input data-f="slug" dir="ltr" value="${esc(p.slug)}"></label>
         <label>الترتيب<input data-f="order" type="number" value="${p.order ?? 0}"></label>
+        <label>النوع<select data-f="contentType"><option value="text"${p.contentType !== 'html' ? ' selected' : ''}>نص عادي</option><option value="html"${p.contentType === 'html' ? ' selected' : ''}>كود HTML</option></select></label>
         <label>الظهور<select data-f="visible"><option value="true"${p.visible !== false ? ' selected' : ''}>ظاهرة</option><option value="false"${p.visible === false ? ' selected' : ''}>مخفية</option></select></label>
-        <label class="full">المحتوى<textarea data-f="content" rows="2">${esc(p.content || '')}</textarea></label>
+        <label class="full">المحتوى / الكود<textarea data-f="content" rows="2" dir="ltr">${esc(p.content || '')}</textarea></label>
       </div>
       <div class="actions"><button class="btn small primary" data-a="save">💾 حفظ</button><button class="btn small danger" data-a="del">حذف</button></div>`;
     div.querySelector('[data-a=save]').onclick = async () => {

@@ -166,9 +166,11 @@
     modalWrap.id = 'editModalWrap';
     modalWrap.innerHTML = `<div id="editModal"><h3>${esc(title)}</h3>
       ${imageMode ? `<img id="editPreview" src="${esc(imageMode.current)}"><label>رابط الصورة<input name="__url" dir="ltr" value="${/^https?:/.test(imageMode.current || '') ? esc(imageMode.current) : ''}" placeholder="https://..."></label><label>أو ارفع من جهازك<input name="__file" type="file" accept="image/*"></label>` : ''}
-      ${(fields || []).map((f) => f.textarea
-        ? `<label>${esc(f.label)}<textarea name="${f.name}" rows="3">${esc(f.value || '')}</textarea></label>`
-        : `<label>${esc(f.label)}<input name="${f.name}" ${f.password ? 'type="password"' : ''} value="${esc(f.value || '')}"></label>`).join('')}
+      ${(fields || []).map((f) => {
+        if (f.textarea) return `<label>${esc(f.label)}<textarea name="${f.name}" rows="4">${esc(f.value || '')}</textarea></label>`;
+        if (f.select) return `<label>${esc(f.label)}<select name="${f.name}">${f.options.map((o) => `<option value="${esc(o[0])}"${String(f.value) === String(o[0]) ? ' selected' : ''}>${esc(o[1])}</option>`).join('')}</select></label>`;
+        return `<label>${esc(f.label)}<input name="${f.name}" ${f.password ? 'type="password"' : ''} value="${esc(f.value || '')}"></label>`;
+      }).join('')}
       <p id="editModalErr" style="color:#ff9c9c;font-size:12px;margin:0;min-height:18px"></p>
       <div class="row"><button id="editOk">${esc(okText)}</button>${extraButtons.map((b, i) => `<button id="editX${i}" type="button">${esc(b.label)}</button>`).join('')}<button id="editNo">إلغاء</button></div></div>`;
     document.body.appendChild(modalWrap);
@@ -234,6 +236,7 @@
     markLogo();
     markLinks();
     markNav();
+    markCustomPages();
     ensureAddPageButton();
     markTrustTicker();
     markItems();
@@ -449,6 +452,45 @@
     });
   }
 
+  // ربط الأقسام المخصصة الموجودة: نص مباشر أو نافذة كود حسب النوع
+  function markCustomPages() {
+    const pagesAll = window.__SITE__?.pagesAll || [];
+    const box = document.getElementById('customPages');
+    if (!box) return;
+    box.querySelectorAll('section[id]').forEach((sec) => {
+      const page = pagesAll.find((p) => (p.slug || p.id) === sec.id);
+      if (!page || page._bound) return;
+      page._bound = true;
+      const card = sec.querySelector('.card');
+      if (!card) return;
+      if (page.contentType === 'html') {
+        card.style.cursor = 'pointer';
+        card.title = 'اضغط لتعديل الكود';
+        card.addEventListener('click', () => {
+          if (!editing) return;
+          openModal({
+            title: 'تعديل كود الصفحة: ' + page.title,
+            fields: [{ name: 'code', label: 'كود HTML', value: page.content || '', textarea: true }],
+            okText: 'حفظ الكود',
+            onOk: (vals) => {
+              card.innerHTML = vals.code;
+              page.content = vals.code;
+              pendingCustomEdits.set(page.id, { content: vals.code, contentType: 'html' });
+              closeModal();
+              status('تم تعديل الكود — اضغط حفظ');
+            }
+          });
+        });
+      } else {
+        const p = card.querySelector('p');
+        if (!p) return;
+        markEditable(p, 'text');
+        p.contentEditable = 'true';
+        p.addEventListener('input', () => pendingCustomEdits.set(page.id, { content: p.innerText }));
+      }
+    });
+  }
+
   // زر + صفحة من الوضع المرئي مباشرة
   function ensureAddPageButton() {
     if (document.getElementById('editAddPage')) return;
@@ -468,7 +510,8 @@
       fields: [
         { name: 'title', label: 'العنوان', value: '' },
         { name: 'slug', label: 'الرابط (حروف انجليزية بدون مسافات)', value: '' },
-        { name: 'content', label: 'المحتوى', value: '', textarea: true }
+        { name: 'contentType', label: 'نوع المحتوى', value: 'text', select: true, options: [['text', 'نص عادي'], ['html', 'كود HTML (خرائط، فيديو، تصميم مخصص)']] },
+        { name: 'content', label: 'المحتوى / الكود', value: '', textarea: true }
       ],
       onOk: async (vals, setErr) => {
         const slug = (vals.slug || '').trim().replace(/^#+/, '').replace(/\s+/g, '-');
@@ -477,7 +520,7 @@
         try {
           const r = await api('/api/admin/pages', {
             method: 'POST', headers: authH(),
-            body: JSON.stringify({ title: vals.title || 'صفحة جديدة', slug, content: vals.content || '', order: 99, visible: true })
+            body: JSON.stringify({ title: vals.title || 'صفحة جديدة', slug, content: vals.content || '', contentType: vals.contentType === 'html' ? 'html' : 'text', order: 99, visible: true })
           });
           closeModal();
           const pagesAll = window.__SITE__?.pagesAll;
@@ -505,11 +548,36 @@
   function appendCustomSection(page) {
     let box = document.getElementById('customPages');
     if (!box) return;
+    const isHtml = page.contentType === 'html';
     const sec = document.createElement('section');
     sec.id = page.slug;
     sec.className = 'section wrap';
-    sec.innerHTML = `<div class="section-top reveal visible"><div><span class="section-no">${esc(page.title)}</span><h2>${esc(page.title)}</h2></div></div><div class="card" style="padding:24px;border-radius:20px"><p data-custompage="${esc(page.id)}" style="white-space:pre-wrap;margin:0">${esc(page.content || '')}</p></div>`;
+    sec.innerHTML = `<div class="section-top reveal visible"><div><span class="section-no">${esc(page.title)}</span><h2>${esc(page.title)}</h2></div></div><div class="card" style="padding:24px;border-radius:20px">${isHtml ? (page.content || '') : `<p data-custompage="${esc(page.id)}" style="white-space:pre-wrap;margin:0">${esc(page.content || '')}</p>`}</div>`;
     box.appendChild(sec);
+    if (isHtml) {
+      sec.querySelector('.card').dataset.customhtml = page.id;
+      sec.querySelector('.card').style.cursor = 'pointer';
+      sec.querySelector('.card').title = 'اضغط لتعديل الكود';
+      sec.querySelector('.card').addEventListener('click', (e) => {
+        if (!editing) return;
+        e.stopPropagation();
+        const pagesAll = window.__SITE__?.pagesAll || [];
+        const cur = pagesAll.find((x) => x.id === page.id);
+        openModal({
+          title: 'تعديل كود الصفحة',
+          fields: [{ name: 'code', label: 'كود HTML', value: cur?.content ?? page.content ?? '', textarea: true }],
+          okText: 'حفظ الكود',
+          onOk: (vals) => {
+            sec.querySelector('.card').innerHTML = vals.code;
+            if (cur) cur.content = vals.code;
+            pendingCustomEdits.set(page.id, { content: vals.code, contentType: 'html' });
+            closeModal();
+            status('تم تعديل الكود — اضغط حفظ');
+          }
+        });
+      });
+      return;
+    }
     const p = sec.querySelector('[data-custompage]');
     markEditable(p, 'text');
     p.contentEditable = 'true';

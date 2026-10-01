@@ -95,6 +95,7 @@ const pages = crud('pages', (b, p) => ({
   title: G(b, 'title', (v) => str(v, 200), '', p),
   slug: G(b, 'slug', (v) => str(v, 100).replace(/\s+/g, '-') || 'page', 'page', p),
   content: G(b, 'content', (v) => str(v, 20000), '', p),
+  contentType: G(b, 'contentType', (v) => (v === 'html' ? 'html' : 'text'), 'text', p),
   visible: G(b, 'visible', (v) => bool(v, true), true, p),
   order: G(b, 'order', (v) => num(v), 0, p)
 }));
