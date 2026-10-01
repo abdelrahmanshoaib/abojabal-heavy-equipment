@@ -1,7 +1,7 @@
 const express = require('express');
 const db = require('../db');
 const { login, requireAdmin } = require('../auth');
-const { str, url } = require('../validate');
+const { str, url, link } = require('../validate');
 
 const router = express.Router();
 
@@ -37,9 +37,10 @@ router.get('/settings', (req, res) => res.json(db.read().settings));
 router.put('/settings', async (req, res) => {
   const b = req.body || {};
   await send(res, db.mutate((d) => {
-    const keys = ['siteName', 'siteSub', 'logoIcon', 'siteTitle', 'metaDesc', 'heroEyebrow', 'heroTitleA', 'heroTitleHL', 'heroTitleB', 'heroDesc', 'heroCaptionSmall', 'heroCaptionBig', 'heroPrimary', 'heroSecondary', 'floatingSmall', 'floatingBig', 'aboutNo', 'aboutTitleA', 'aboutTitleHL', 'aboutDesc', 'aboutTag', 'aboutTagBig', 'servicesNo', 'servicesTitleA', 'servicesTitleHL', 'servicesDesc', 'productsNo', 'productsTitleA', 'productsTitleHL', 'processNo', 'processTitleA', 'processTitleHL', 'processDesc', 'contactNo', 'contactTitleA', 'contactTitleHL', 'contactDesc', 'email', 'phone', 'address', 'footerNote'];
-    keys.forEach((k) => { if (b[k] !== undefined) d.settings[k] = str(b[k], 2000); });
-    ['heroImage', 'aboutImage'].forEach((k) => { if (b[k] !== undefined) d.settings[k] = url(b[k]) || d.settings[k]; });
+  const keys = ['siteName', 'siteSub', 'logoIcon', 'siteTitle', 'metaDesc', 'heroEyebrow', 'heroTitleA', 'heroTitleHL', 'heroTitleB', 'heroDesc', 'heroCaptionSmall', 'heroCaptionBig', 'heroPrimary', 'heroSecondary', 'heroPrimaryUrl', 'heroSecondaryUrl', 'floatingSmall', 'floatingBig', 'aboutNo', 'aboutTitleA', 'aboutTitleHL', 'aboutDesc', 'aboutTag', 'aboutTagBig', 'servicesNo', 'servicesTitleA', 'servicesTitleHL', 'servicesDesc', 'productsNo', 'productsTitleA', 'productsTitleHL', 'processNo', 'processTitleA', 'processTitleHL', 'processDesc', 'contactNo', 'contactTitleA', 'contactTitleHL', 'contactDesc', 'email', 'phone', 'address', 'footerNote'];
+  keys.forEach((k) => { if (b[k] !== undefined) d.settings[k] = str(b[k], 2000); });
+  ['heroImage', 'aboutImage', 'logoImage', 'favicon'].forEach((k) => { if (b[k] !== undefined) d.settings[k] = url(b[k]) || ''; });
+  ['heroPrimaryUrl', 'heroSecondaryUrl'].forEach((k) => { if (b[k] !== undefined) d.settings[k] = link(b[k]); });
     if (Array.isArray(b.ticker)) d.settings.ticker = b.ticker.map((t) => str(t, 100)).filter(Boolean).slice(0, 12);
     if (Array.isArray(b.trust)) d.settings.trust = b.trust.map((t) => ({ n: str(t.n || t.num || '', 10), t: str(t.t || t.label || t.title || '', 100) })).filter((x) => x.t).slice(0, 6);
     return { settings: d.settings };
@@ -47,13 +48,21 @@ router.put('/settings', async (req, res) => {
 });
 
 // ---- generic CRUD helper (ذري: يعيد القراءة قبل كل كتابة) ----
+// التعديل الجزئي آمن: الحقول الغائبة عن الطلب لا تُمس (تُحذف من الـ patch)
+function stripUndef(o) {
+  const r = {};
+  for (const k of Object.keys(o)) if (o[k] !== undefined) r[k] = o[k];
+  return r;
+}
+// G: قيمة الحقل — الافتراضي يُستخدم عند الإنشاء فقط، وعند التعديل يُترك الحقل كما هو
+const G = (b, k, fn, dflt, partial) => (b[k] !== undefined ? fn(b[k]) : (partial ? undefined : dflt));
 function crud(key, map) {
   return {
     list: (req, res) => res.json(db.read()[key] || []),
     create: async (req, res) => {
       const body = req.body || {};
       await send(res, db.mutate((d) => {
-        const item = { id: db.uid(key), ...map(body) };
+        const item = { id: db.uid(key), ...stripUndef(map(body, false)) };
         d[key] = d[key] || [];
         d[key].push(item);
         return { item };
@@ -65,7 +74,7 @@ function crud(key, map) {
       await send(res, db.mutate((d) => {
         const i = (d[key] || []).findIndex((x) => x.id === id);
         if (i < 0) throw Object.assign(new Error('غير موجود'), { code: 'NOT_FOUND' });
-        d[key][i] = { ...d[key][i], ...map(body) };
+        d[key][i] = { ...d[key][i], ...stripUndef(map(body, true)) };
         return { item: d[key][i] };
       }));
     },
@@ -82,24 +91,42 @@ function crud(key, map) {
 const num = (v) => { const n = Number(v); return Number.isFinite(n) ? n : 0; };
 const bool = (v, dflt = true) => (v === undefined ? dflt : !!v);
 
-const pages = crud('pages', (b) => ({
-  title: str(b.title, 200), slug: str(b.slug, 100).replace(/\s+/g, '-') || 'page',
-  content: str(b.content, 20000), visible: bool(b.visible, true), order: num(b.order)
+const pages = crud('pages', (b, p) => ({
+  title: G(b, 'title', (v) => str(v, 200), '', p),
+  slug: G(b, 'slug', (v) => str(v, 100).replace(/\s+/g, '-') || 'page', 'page', p),
+  content: G(b, 'content', (v) => str(v, 20000), '', p),
+  visible: G(b, 'visible', (v) => bool(v, true), true, p),
+  order: G(b, 'order', (v) => num(v), 0, p)
 }));
-const services = crud('services', (b) => ({
-  icon: str(b.icon, 10), num: str(b.num, 10), title: str(b.title, 200),
-  desc: str(b.desc, 2000), link: str(b.link, 200), order: num(b.order)
+const services = crud('services', (b, p) => ({
+  icon: G(b, 'icon', (v) => str(v, 10), '↗', p),
+  num: G(b, 'num', (v) => str(v, 10), '', p),
+  title: G(b, 'title', (v) => str(v, 200), '', p),
+  desc: G(b, 'desc', (v) => str(v, 2000), '', p),
+  link: G(b, 'link', (v) => str(v, 200), 'اطلب التفاصيل ↗', p),
+  linkUrl: G(b, 'linkUrl', (v) => link(v), '#contact', p),
+  order: G(b, 'order', (v) => num(v), 0, p)
 }));
-const products = crud('products', (b) => ({
-  category: str(b.category, 50) || 'earth', catLabel: str(b.catLabel, 100),
-  num: str(b.num, 10), title: str(b.title, 200), desc: str(b.desc, 2000),
-  image: url(b.image), order: num(b.order)
+const products = crud('products', (b, p) => ({
+  category: G(b, 'category', (v) => str(v, 50) || 'earth', 'earth', p),
+  catLabel: G(b, 'catLabel', (v) => str(v, 100), '', p),
+  num: G(b, 'num', (v) => str(v, 10), '', p),
+  title: G(b, 'title', (v) => str(v, 200), '', p),
+  desc: G(b, 'desc', (v) => str(v, 2000), '', p),
+  image: G(b, 'image', (v) => url(v), '', p),
+  order: G(b, 'order', (v) => num(v), 0, p)
 }));
-const steps = crud('steps', (b) => ({
-  num: str(b.num, 10), title: str(b.title, 200), desc: str(b.desc, 2000), order: num(b.order)
+const steps = crud('steps', (b, p) => ({
+  num: G(b, 'num', (v) => str(v, 10), '', p),
+  title: G(b, 'title', (v) => str(v, 200), '', p),
+  desc: G(b, 'desc', (v) => str(v, 2000), '', p),
+  order: G(b, 'order', (v) => num(v), 0, p)
 }));
-const points = crud('points', (b) => ({
-  num: str(b.num, 10), title: str(b.title, 200), desc: str(b.desc, 2000), order: num(b.order)
+const points = crud('points', (b, p) => ({
+  num: G(b, 'num', (v) => str(v, 10), '', p),
+  title: G(b, 'title', (v) => str(v, 200), '', p),
+  desc: G(b, 'desc', (v) => str(v, 2000), '', p),
+  order: G(b, 'order', (v) => num(v), 0, p)
 }));
 
 router.get('/pages', pages.list); router.post('/pages', pages.create);

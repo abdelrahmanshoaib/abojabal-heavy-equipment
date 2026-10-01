@@ -18,4 +18,11 @@ function email(v) {
   const s = str(v, 200);
   return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(s) ? s : '';
 }
-module.exports = { str, url, email };
+/** روابط آمنة: http(s) أو مسار داخلي /... أو anchor ...# — تمنع javascript: */
+function link(v, dflt) {
+  const s = str(v, 2000);
+  if (!s) return dflt || '#contact';
+  if (/^(https?:\/\/|\/|#)/i.test(s) && !/^javascript:/i.test(s)) return s;
+  return dflt || '#contact';
+}
+module.exports = { str, url, email, link };

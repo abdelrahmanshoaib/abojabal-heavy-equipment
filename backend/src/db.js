@@ -22,6 +22,8 @@ function defaultData() {
       siteName: 'أبو جبل',
       siteSub: 'للمعدات الثقيلة',
       logoIcon: 'AJ',
+      logoImage: '',
+      favicon: '',
       siteTitle: 'أبو جبل | حلول المعدات الثقيلة',
       metaDesc: 'أبو جبل للمعدات الثقيلة — بيع واستيراد وتصدير المعدات الثقيلة.',
       heroEyebrow: 'تجارة المعدات الثقيلة بثقة واحتراف',
@@ -34,6 +36,8 @@ function defaultData() {
       heroCaptionBig: 'قوة. دقة. التزام.',
       heroPrimary: 'استكشف المعدات ↗',
       heroSecondary: 'اطلب استشارة ↗',
+      heroPrimaryUrl: '#products',
+      heroSecondaryUrl: '#contact',
       floatingSmall: 'استجابة وتنسيق',
       floatingBig: 'من البداية حتى التسليم',
       trust: [
@@ -78,10 +82,10 @@ function defaultData() {
       { id: 'contact', title: 'تواصل معنا', slug: 'contact', visible: true, order: 6, content: '' }
     ],
     services: [
-      { id: 's1', icon: '↗', num: '01', title: 'بيع المعدات الثقيلة', desc: 'خيارات من المعدات الجديدة والمستعملة حسب طبيعة المشروع ومتطلبات التشغيل.', link: 'اطلب التفاصيل ↗', order: 1 },
-      { id: 's2', icon: '⇄', num: '02', title: 'الاستيراد والتصدير', desc: 'بحث وتنسيق تجاري ومساندة في خطوات الشحن والتسليم عبر الأسواق المختلفة.', link: 'ابدأ طلبك ↗', order: 2 },
-      { id: 's3', icon: '⚙', num: '03', title: 'قطع الغيار والدعم', desc: 'المساعدة في البحث عن قطع الغيار والحلول المساندة للحفاظ على جاهزية المعدة.', link: 'تحدث معنا ↗', order: 3 },
-      { id: 's4', icon: '⌁', num: '04', title: 'استشارات المشروعات', desc: 'مقارنة البدائل وتحديد الاحتياجات الفنية والتجارية قبل اتخاذ قرار الشراء.', link: 'اطلب استشارة ↗', order: 4 }
+      { id: 's1', icon: '↗', num: '01', title: 'بيع المعدات الثقيلة', desc: 'خيارات من المعدات الجديدة والمستعملة حسب طبيعة المشروع ومتطلبات التشغيل.', link: 'اطلب التفاصيل ↗', linkUrl: '#contact', order: 1 },
+      { id: 's2', icon: '⇄', num: '02', title: 'الاستيراد والتصدير', desc: 'بحث وتنسيق تجاري ومساندة في خطوات الشحن والتسليم عبر الأسواق المختلفة.', link: 'ابدأ طلبك ↗', linkUrl: '#contact', order: 2 },
+      { id: 's3', icon: '⚙', num: '03', title: 'قطع الغيار والدعم', desc: 'المساعدة في البحث عن قطع الغيار والحلول المساندة للحفاظ على جاهزية المعدة.', link: 'تحدث معنا ↗', linkUrl: '#contact', order: 3 },
+      { id: 's4', icon: '⌁', num: '04', title: 'استشارات المشروعات', desc: 'مقارنة البدائل وتحديد الاحتياجات الفنية والتجارية قبل اتخاذ قرار الشراء.', link: 'اطلب استشارة ↗', linkUrl: '#contact', order: 4 }
     ],
     products: [
       { id: 'p1', category: 'earth', catLabel: 'حفر وتحميل', num: '01', title: 'الحفارات', desc: 'للحفر وتجهيز المواقع وأعمال البنية التحتية.', image: 'https://images.unsplash.com/photo-1579412690850-bd41cd0af397?auto=format&fit=crop&w=1000&q=85', order: 1 },
@@ -124,15 +128,23 @@ function migrate(data) {
   for (const k of ['pages', 'services', 'products', 'steps', 'points', 'messages']) {
     if (!Array.isArray(data[k])) { data[k] = d[k]; changed = true; }
   }
+  // استكمال حقول ناقصة في عناصر قديمة بدون مسح
+  (data.services || []).forEach((x) => {
+    if (x.linkUrl === undefined) { x.linkUrl = '#contact'; changed = true; }
+  });
   return changed;
 }
 
 function readBundled() {
+  let data;
   try {
-    return JSON.parse(fs.readFileSync(SITE_FILE, 'utf8'));
+    data = JSON.parse(fs.readFileSync(SITE_FILE, 'utf8'));
   } catch {
-    return defaultData();
+    data = defaultData();
   }
+  // استكمال في الذاكرة فقط (بدون كتابة) — يضمن شكلاً كاملاً دائماً
+  try { migrate(data); } catch {}
+  return data;
 }
 
 function read() {

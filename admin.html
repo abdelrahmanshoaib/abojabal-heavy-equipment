@@ -46,6 +46,8 @@
         <label>اسم الموقع<input name="siteName"></label>
         <label>وصف تحت الاسم<input name="siteSub"></label>
         <label>أيقونة اللوجو (حرفان)<input name="logoIcon" maxlength="4"></label>
+        <label class="full">صورة اللوجو (اختياري — تظهر بدل الحروف)<input name="logoImage" dir="ltr" placeholder="https://... أو /uploads/..."></label>
+        <label class="full">أيقونة المتصفح Favicon<input name="favicon" dir="ltr" placeholder="https://..."></label>
         <label class="full">عنوان المتصفح (title)<input name="siteTitle" dir="ltr"></label>
         <label class="full">وصف محركات البحث<textarea name="metaDesc" rows="2"></textarea></label>
         <label>البريد<input name="email" dir="ltr"></label>
@@ -63,6 +65,8 @@
         <label>تعليق كبير على الصورة<input name="heroCaptionBig"></label>
         <label>زر أساسي<input name="heroPrimary"></label>
         <label>زر ثانوي<input name="heroSecondary"></label>
+        <label>رابط الزر الأساسي<input name="heroPrimaryUrl" dir="ltr" placeholder="#products"></label>
+        <label>رابط الزر الثانوي<input name="heroSecondaryUrl" dir="ltr" placeholder="#contact"></label>
         <label>كارت عائم صغير<input name="floatingSmall"></label>
         <label>كارت عائم كبير<input name="floatingBig"></label>
         <label class="full">صف الثقة (مثال: 01|توريد منظم ، 02|خيارات متعددة)<input name="trust"></label>
@@ -102,7 +106,7 @@
     </section>
     <!-- الخدمات -->
     <section id="tab-services" class="panel hidden">
-      <div class="card"><h3>➕ خدمة جديدة</h3><form id="serviceForm" class="grid2"><label>الأيقونة (رمز)<input name="icon" value="↗"></label><label>الرقم<input name="num" value="05"></label><label>العنوان<input name="title" required></label><label>نص الرابط<input name="link" value="اطلب التفاصيل ↗"></label><label>الترتيب<input name="order" type="number" value="5"></label><label class="full">الوصف<textarea name="desc" rows="2"></textarea></label><div class="full row"><button class="btn primary">إضافة</button></div></form></div>
+      <div class="card"><h3>➕ خدمة جديدة</h3><form id="serviceForm" class="grid2"><label>الأيقونة (رمز)<input name="icon" value="↗"></label><label>الرقم<input name="num" value="05"></label><label>العنوان<input name="title" required></label><label>نص الرابط<input name="link" value="اطلب التفاصيل ↗"></label><label>رابط الزر<input name="linkUrl" dir="ltr" value="#contact"></label><label>الترتيب<input name="order" type="number" value="5"></label><label class="full">الوصف<textarea name="desc" rows="2"></textarea></label><div class="full row"><button class="btn primary">إضافة</button></div></form></div>
       <div id="servicesList" class="list"></div>
     </section>
     <!-- المنتجات -->

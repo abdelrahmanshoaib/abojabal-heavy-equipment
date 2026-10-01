@@ -39,6 +39,9 @@
     '#contactTitle': ['contactTitleA', 'contactTitleHL', null]
   };
   const IMAGES = { '#heroImage': 'heroImage', '#aboutImage': 'aboutImage' };
+  const LOGO_SEL = '.logo-icon';
+  // روابط الأزرار: selector-index -> {textKey, urlKey}
+  const pendingUrls = {}; // settingsKey -> url (تُدمج عند الحفظ)
 
   let API = '', TOKEN = localStorage.getItem('abojabal_token') || '';
   let editing = false, siteReady = !!window.__SITE__;
@@ -137,7 +140,7 @@
 
   // نافذة عامة: حقول نصية + (وضع صورة اختياري)
   let modalWrap = null;
-  function openModal({ title, fields, okText = 'تم', onOk, imageMode = null }) {
+  function openModal({ title, fields, okText = 'تم', onOk, imageMode = null, extraButtons = [] }) {
     closeModal();
     modalWrap = document.createElement('div');
     modalWrap.id = 'editModalWrap';
@@ -147,9 +150,10 @@
         ? `<label>${esc(f.label)}<textarea name="${f.name}" rows="3">${esc(f.value || '')}</textarea></label>`
         : `<label>${esc(f.label)}<input name="${f.name}" ${f.password ? 'type="password"' : ''} value="${esc(f.value || '')}"></label>`).join('')}
       <p id="editModalErr" style="color:#ff9c9c;font-size:12px;margin:0;min-height:18px"></p>
-      <div class="row"><button id="editOk">${esc(okText)}</button><button id="editNo">إلغاء</button></div></div>`;
+      <div class="row"><button id="editOk">${esc(okText)}</button>${extraButtons.map((b, i) => `<button id="editX${i}" type="button">${esc(b.label)}</button>`).join('')}<button id="editNo">إلغاء</button></div></div>`;
     document.body.appendChild(modalWrap);
     modalWrap.querySelector('#editNo').onclick = closeModal;
+    extraButtons.forEach((b, i) => { modalWrap.querySelector('#editX' + i).onclick = b.onClick; });
     modalWrap.addEventListener('click', (e) => { if (e.target === modalWrap) closeModal(); });
     const fileInp = modalWrap.querySelector('input[name=__file]');
     if (fileInp) fileInp.onchange = () => {
@@ -207,6 +211,8 @@
     markTexts();
     markTitles();
     markImages();
+    markLogo();
+    markLinks();
     markTrustTicker();
     markItems();
     status('اضغط على أي نص أو صورة لتعديلها');
@@ -254,14 +260,7 @@
         el.addEventListener('input', () => { dirtySettings.add(key); el.dataset.clean = '1'; });
       });
     });
-    // أزرار الهيرو + سطور التواصل (تحتاج تنظيف خاص)
-    const btns = document.querySelectorAll('#heroActions a, .hero-content .actions a');
-    btns.forEach((el, i) => {
-      markEditable(el, 'text');
-      el.dataset.skey = i === 0 ? 'heroPrimary' : 'heroSecondary';
-      el.contentEditable = 'true';
-      el.addEventListener('input', () => dirtySettings.add(el.dataset.skey));
-    });
+    // سطور التواصل (تحتاج تنظيف خاص)
     const lines = document.querySelectorAll('.contact-lines span');
     const lkeys = ['email', 'phone', 'address'];
     lines.forEach((el, i) => {
@@ -271,6 +270,101 @@
       el.dataset.stripSym = '1';
       el.contentEditable = 'true';
       el.addEventListener('input', () => dirtySettings.add(lkeys[i]));
+    });
+  }
+
+  function markLogo() {
+    document.querySelectorAll(LOGO_SEL).forEach((el) => {
+      markEditable(el, 'img');
+      el.dataset.imgkey = 'logoImage';
+      el.style.cursor = 'pointer';
+      el.title = 'اضغط لتبديل صورة اللوجو';
+      el.addEventListener('click', (e) => {
+        if (!editing) return;
+        e.preventDefault();
+        e.stopPropagation();
+        const s = (window.__SITE__?.settings) || {};
+        const cur = el.querySelector('img')?.src || '';
+        openImageModal(cur, (url) => {
+          el.innerHTML = `<img src="${esc(url)}" alt="logo">`;
+          el.dataset.pending = url;
+          window.__LOGO_REMOVED = false;
+          dirtySettings.add('logoImage');
+          closeModal();
+          status('تم تبديل اللوجو — اضغط (تم وحفظ)');
+        }, true, () => {
+          el.innerHTML = '';
+          el.textContent = s.logoIcon || 'AJ';
+          window.__LOGO_REMOVED = true;
+          dirtySettings.add('logoImage');
+          closeModal();
+          status('تمت إزالة صورة اللوجو — اضغط (تم وحفظ)');
+        });
+      });
+    });
+  }
+
+  // أزرار الهيرو: نص + رابط عبر نافذة (بدل التعديل المباشر حتى لا يتعارض مع التنقل)
+  function markLinks() {
+    const defs = [
+      { textKey: 'heroPrimary', urlKey: 'heroPrimaryUrl' },
+      { textKey: 'heroSecondary', urlKey: 'heroSecondaryUrl' }
+    ];
+    document.querySelectorAll('#heroActions a, .hero-content .actions a').forEach((el, i) => {
+      const def = defs[i];
+      if (!def) return;
+      markEditable(el, 'link');
+      el.dataset.linkmodal = '1';
+      el.style.cursor = 'pointer';
+      el.title = 'اضغط لتعديل النص والرابط';
+      el.addEventListener('click', (e) => {
+        if (!editing) return;
+        e.preventDefault();
+        const s = (window.__SITE__?.settings) || {};
+        openModal({
+          title: 'تعديل الزر',
+          fields: [
+            { name: 'text', label: 'النص', value: stripArrow(el.textContent) },
+            { name: 'url', label: 'الرابط (مثال #products أو https://...)', value: pendingUrls[def.urlKey] ?? s[def.urlKey] ?? el.getAttribute('href') ?? '#contact' }
+          ],
+          onOk: (vals) => {
+            el.innerHTML = `${esc(vals.text)} <b>↗</b>`;
+            el.setAttribute('href', vals.url || '#contact');
+            el.dataset.newText = vals.text;
+            pendingUrls[def.urlKey] = vals.url || '#contact';
+            dirtySettings.add(def.textKey);
+            dirtySettings.add(def.urlKey);
+            closeModal();
+            status('تم تعديل الزر — اضغط (تم وحفظ)');
+          }
+        });
+      });
+    });
+    // روابط كروت الخدمات: نص + رابط لكل عنصر
+    document.querySelectorAll('[data-col="services"][data-id] a[href]').forEach((el) => {
+      markEditable(el, 'link');
+      el.style.cursor = 'pointer';
+      el.addEventListener('click', (e) => {
+        if (!editing) return;
+        e.preventDefault();
+        const card = el.closest('[data-col][data-id]');
+        openModal({
+          title: 'تعديل رابط الخدمة',
+          fields: [
+            { name: 'text', label: 'النص', value: stripArrow(el.textContent) },
+            { name: 'url', label: 'الرابط', value: el.getAttribute('href') || '#contact' }
+          ],
+          onOk: (vals) => {
+            el.textContent = vals.text;
+            el.setAttribute('href', vals.url || '#contact');
+            const k = card.dataset.col + ':' + card.dataset.id;
+            if (!itemEdits.has(k)) itemEdits.set(k, { col: card.dataset.col, id: card.dataset.id, fields: {} });
+            Object.assign(itemEdits.get(k).fields, { link: vals.text, linkUrl: vals.url || '#contact' });
+            closeModal();
+            status('تم تعديل الرابط — اضغط (تم وحفظ)');
+          }
+        });
+      });
     });
   }
 
@@ -324,8 +418,12 @@
     });
   }
 
-  function openImageModal(current, onOk) {
-    openModal({ title: 'تبديل الصورة', fields: [], okText: 'استخدام هذه الصورة', imageMode: { current }, onOk });
+  function openImageModal(current, onOk, allowRemove, onRemove) {
+    openModal({
+      title: 'تبديل الصورة', fields: [], okText: 'استخدام هذه الصورة',
+      imageMode: { current }, onOk,
+      extraButtons: allowRemove ? [{ label: '🗑 إزالة الصورة', onClick: onRemove }] : []
+    });
   }
 
   function markTrustTicker() {
@@ -400,9 +498,19 @@
         if (keys[2]) body[keys[2]] = el.dataset.newB || '';
       }
     });
-    // صور الإعدادات المعلقة
-    document.querySelectorAll('img[data-pending]').forEach((el) => {
+    // صور الإعدادات المعلقة (تشمل اللوجو)
+    document.querySelectorAll('[data-pending]').forEach((el) => {
       if (el.dataset.imgkey) body[el.dataset.imgkey] = el.dataset.pending;
+    });
+    // إزالة صورة اللوجو
+    if (window.__LOGO_REMOVED) body.logoImage = '';
+    // أزرار الهيرو (نص + رابط من النوافذ)
+    const btnDefs = [['heroPrimary', 'heroPrimaryUrl'], ['heroSecondary', 'heroSecondaryUrl']];
+    document.querySelectorAll('#heroActions a, .hero-content .actions a').forEach((el, i) => {
+      const def = btnDefs[i];
+      if (!def) return;
+      if (el.dataset.newText !== undefined) body[def[0]] = stripArrow(el.dataset.newText);
+      if (pendingUrls[def[1]] !== undefined) body[def[1]] = pendingUrls[def[1]];
     });
     // الثقة والشريط من الـ DOM
     if (dirtyTrustTicker.trust) {

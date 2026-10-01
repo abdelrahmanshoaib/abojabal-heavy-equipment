@@ -95,13 +95,21 @@ async function loadSite() {
   window.__SITE__ = d;
   const s = d.settings || {};
 
-  // SEO + لوجو + فوتر
+  // SEO + لوجو (نص أو صورة) + فوتر + favicon
   if (s.siteTitle) document.title = s.siteTitle;
   const md = document.getElementById('metaDesc');
   if (md && s.metaDesc) md.setAttribute('content', s.metaDesc);
+  if (s.favicon) {
+    let l = document.querySelector('link[rel="icon"]');
+    if (!l) { l = document.createElement('link'); l.rel = 'icon'; document.head.appendChild(l); }
+    l.href = IMG(s.favicon);
+  }
   document.querySelectorAll('.logo b').forEach((el) => { if (s.siteName) el.textContent = s.siteName; });
   document.querySelectorAll('.logo small').forEach((el) => { if (s.siteSub) el.textContent = s.siteSub; });
-  document.querySelectorAll('.logo-icon').forEach((el) => { if (s.logoIcon) el.textContent = s.logoIcon; });
+  document.querySelectorAll('.logo-icon').forEach((el) => {
+    if (s.logoImage) el.innerHTML = `<img src="${esc(IMG(s.logoImage))}" alt="logo">`;
+    else if (s.logoIcon) el.textContent = s.logoIcon;
+  });
   if (s.siteName) { const fn = document.getElementById('footerName'); if (fn) fn.textContent = s.siteName; }
   if (s.footerNote) { const fn = document.getElementById('footerNote'); if (fn) fn.textContent = s.footerNote; }
 
@@ -126,12 +134,18 @@ async function loadSite() {
   const cb = document.querySelector('.image-caption b'); if (cb && s.heroCaptionBig) cb.textContent = s.heroCaptionBig;
   if (s.floatingSmall) { const f = document.getElementById('floatingSmall'); if (f) f.textContent = s.floatingSmall; }
   if (s.floatingBig) { const f = document.getElementById('floatingBig'); if (f) f.textContent = s.floatingBig; }
-  if (s.heroPrimary || s.heroSecondary) {
+  if (s.heroPrimary || s.heroSecondary || s.heroPrimaryUrl || s.heroSecondaryUrl) {
     const acts = document.getElementById('heroActions');
     if (acts) {
       const btns = acts.querySelectorAll('a');
-      if (btns[0] && s.heroPrimary) btns[0].innerHTML = esc(s.heroPrimary) + ' <b>↗</b>';
-      if (btns[1] && s.heroSecondary) btns[1].innerHTML = esc(s.heroSecondary) + ' <b>↗</b>';
+      if (btns[0]) {
+        if (s.heroPrimary) btns[0].innerHTML = esc(s.heroPrimary) + ' <b>↗</b>';
+        if (s.heroPrimaryUrl) btns[0].setAttribute('href', s.heroPrimaryUrl);
+      }
+      if (btns[1]) {
+        if (s.heroSecondary) btns[1].innerHTML = esc(s.heroSecondary) + ' <b>↗</b>';
+        if (s.heroSecondaryUrl) btns[1].setAttribute('href', s.heroSecondaryUrl);
+      }
     }
   }
   if (Array.isArray(s.trust) && s.trust.length) {
@@ -172,7 +186,7 @@ async function loadSite() {
   if (Array.isArray(d.services)) {
     const g = document.getElementById('servicesGrid');
     if (g) g.innerHTML = d.services.length
-      ? d.services.map((x) => `<article class="service glass reveal visible" data-col="services" data-id="${esc(x.id)}"><div class="service-icon">${esc(x.icon || '↗')}</div><small>${esc(x.num || '')}</small><h3 data-field="title">${esc(x.title)}</h3><p data-field="desc">${esc(x.desc || '')}</p><a href="#contact">${esc(x.link || 'اطلب التفاصيل ↗')}</a></article>`).join('')
+      ? d.services.map((x) => `<article class="service glass reveal visible" data-col="services" data-id="${esc(x.id)}"><div class="service-icon">${esc(x.icon || '↗')}</div><small>${esc(x.num || '')}</small><h3 data-field="title">${esc(x.title)}</h3><p data-field="desc">${esc(x.desc || '')}</p><a href="${esc(x.linkUrl || '#contact')}" data-field="link" data-urlfield="linkUrl">${esc(x.link || 'اطلب التفاصيل ↗')}</a></article>`).join('')
       : '<p>لا توجد خدمات حالياً.</p>';
     const sel = document.getElementById('serviceSelect');
     if (sel && d.services.length) sel.innerHTML = d.services.map((x) => `<option>${esc(x.title)}</option>`).join('');
