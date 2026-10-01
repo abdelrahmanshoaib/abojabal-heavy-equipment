@@ -55,6 +55,8 @@
   const dirtySettings = new Set();
   const dirtyTrustTicker = { trust: false, ticker: false };
   const itemEdits = new Map(); // `${col}:${id}` -> {col,id,fields:{},els:[]}
+  const pendingSettingValues = {}; // قيم إعدادات من النوافذ (تُدمج عند الحفظ)
+  const pendingNavEdits = new Map(); // pageId -> {title}
 
   document.addEventListener('site-loaded', () => { siteReady = true; });
   // تعليم العنصر المعدّل فعلياً — عند تكرار نفس الحقل (لوجو الهيدر/الفوتر) تُعتمد نسخة المستخدم
@@ -102,12 +104,22 @@
   const bar = document.createElement('div');
   bar.id = 'editBar';
   bar.style.display = 'none';
-  bar.innerHTML = `<span class="dot"></span><b>وضع التعديل</b><span id="editStatus">اضغط على أي نص أو صورة لتعديلها</span><button id="editSave">💾 تم وحفظ</button><button id="editCancel">✖ إلغاء</button>`;
+  bar.innerHTML = `<span class="dot"></span><b>تعديل</b><span id="editStatus"></span><button id="editSave">💾 حفظ</button><button id="editCancel">✖</button>`;
   document.body.appendChild(bar);
+  const toast = document.createElement('div');
+  toast.id = 'editToast';
+  document.body.appendChild(toast);
+  let toastTimer = null;
 
   function status(t, ok = true) {
     const el = document.getElementById('editStatus');
-    if (el) { el.textContent = t; el.style.color = ok ? '#c6f36a' : '#ff9c9c'; }
+    const short = String(t || '');
+    if (el) { el.textContent = short.length > 26 ? short.slice(0, 26) + '…' : short; el.style.color = ok ? '#c6f36a' : '#ff9c9c'; }
+    toast.textContent = String(t || '');
+    toast.style.borderColor = ok ? 'rgba(198,243,106,.45)' : 'rgba(255,120,120,.5)';
+    toast.classList.add('show');
+    clearTimeout(toastTimer);
+    toastTimer = setTimeout(() => toast.classList.remove('show'), ok ? 3500 : 6000);
   }
 
   async function ensureAuthThenEnable() {
@@ -220,6 +232,7 @@
     markImages();
     markLogo();
     markLinks();
+    markNav();
     markTrustTicker();
     markItems();
     status('اضغط على أي نص أو صورة لتعديلها');
@@ -369,6 +382,58 @@
             Object.assign(itemEdits.get(k).fields, { link: vals.text, linkUrl: vals.url || '#contact' });
             closeModal();
             status('تم تعديل الرابط — اضغط (تم وحفظ)');
+          }
+        });
+      });
+    });
+  }
+
+  // روابط القائمة الرئيسية: تعديل النص (والزر: نص + رابط)
+  function markNav() {
+    const navEl = document.querySelector('#mainNav') || document.querySelector('.nav');
+    if (!navEl) return;
+    const pagesAll = window.__SITE__?.pagesAll || window.__SITE__?.pages || [];
+    navEl.querySelectorAll('a[href]').forEach((el) => {
+      if (el.dataset.editable) return;
+      const isCta = el.classList.contains('nav-button');
+      markEditable(el, 'link');
+      el.style.cursor = 'pointer';
+      el.title = 'اضغط لتعديل هذا الرابط';
+      el.addEventListener('click', (e) => {
+        if (!editing) return;
+        e.preventDefault();
+        if (isCta) {
+          const s = window.__SITE__?.settings || {};
+          openModal({
+            title: 'تعديل زر الهيدر',
+            fields: [
+              { name: 'text', label: 'النص', value: stripArrow(el.textContent) },
+              { name: 'url', label: 'الرابط', value: pendingSettingValues.navCtaUrl ?? s.navCtaUrl ?? el.getAttribute('href') ?? '#contact' }
+            ],
+            onOk: (vals) => {
+              el.innerHTML = `${esc(vals.text)} <span>↗</span>`;
+              el.setAttribute('href', vals.url || '#contact');
+              pendingSettingValues.navCta = vals.text;
+              pendingSettingValues.navCtaUrl = vals.url || '#contact';
+              dirtySettings.add('navCta');
+              dirtySettings.add('navCtaUrl');
+              closeModal();
+              status('تم تعديل زر الهيدر — اضغط حفظ');
+            }
+          });
+          return;
+        }
+        const slug = (el.getAttribute('href') || '').replace(/^#/, '');
+        const page = pagesAll.find((p) => (p.slug || p.id) === slug);
+        if (!page) return;
+        openModal({
+          title: 'تعديل رابط القائمة',
+          fields: [{ name: 'text', label: 'النص', value: stripArrow(el.textContent) || page.title }],
+          onOk: (vals) => {
+            el.textContent = vals.text;
+            pendingNavEdits.set(page.id, { title: vals.text });
+            closeModal();
+            status('تم تعديل الرابط — اضغط حفظ');
           }
         });
       });
@@ -538,10 +603,17 @@
     btn.disabled = true;
     try {
       const body = collectSettings();
+      Object.assign(body, pendingSettingValues);
       let n = 0, viaGithub = false;
       if (Object.keys(body).length) {
         status('جارٍ حفظ النصوص والصور...');
         const r = await api('/api/admin/settings', { method: 'PUT', headers: authH(), body: JSON.stringify(body) });
+        if (r.deployed === 'github') viaGithub = true;
+        n++;
+      }
+      for (const [pageId, fields] of pendingNavEdits) {
+        status('جارٍ حفظ القائمة...');
+        const r = await api('/api/admin/pages/' + pageId, { method: 'PUT', headers: authH(), body: JSON.stringify(fields) });
         if (r.deployed === 'github') viaGithub = true;
         n++;
       }

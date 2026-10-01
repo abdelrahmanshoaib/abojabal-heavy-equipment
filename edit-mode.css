@@ -1,14 +1,16 @@
 /* وضع التعديل المرئي — أبو جبل */
 #editFab{position:fixed;bottom:22px;left:22px;z-index:9990;border:1px solid rgba(198,243,106,.5);background:rgba(7,18,23,.9);color:#c6f36a;border-radius:100px;padding:12px 20px;font-family:inherit;font-size:13px;font-weight:800;cursor:pointer;backdrop-filter:blur(12px);box-shadow:0 10px 30px rgba(0,0,0,.4)}
 #editFab:hover{background:#c6f36a;color:#132019}
-#editBar{position:fixed;top:12px;right:50%;transform:translateX(50%);z-index:9995;display:flex;gap:10px;align-items:center;background:rgba(7,18,23,.95);border:1px solid rgba(198,243,106,.45);border-radius:100px;padding:8px 8px 8px 18px;font-family:'Almarai',sans-serif;font-size:12px;color:#fff;box-shadow:0 15px 40px rgba(0,0,0,.5);backdrop-filter:blur(14px);max-width:calc(100% - 24px);flex-wrap:wrap;justify-content:center}
-#editBar .dot{width:9px;height:9px;border-radius:50%;background:#c6f36a;box-shadow:0 0 12px #c6f36a;animation:blink 1.2s infinite}
+#editBar{position:fixed;bottom:22px;right:22px;z-index:9995;display:flex;gap:8px;align-items:center;background:rgba(7,18,23,.95);border:1px solid rgba(198,243,106,.45);border-radius:100px;padding:7px 8px 7px 14px;font-family:'Almarai',sans-serif;font-size:12px;color:#fff;box-shadow:0 15px 40px rgba(0,0,0,.5);backdrop-filter:blur(14px)}
+#editBar .dot{width:9px;height:9px;border-radius:50%;background:#c6f36a;box-shadow:0 0 12px #c6f36a;animation:blink 1.2s infinite;flex-shrink:0}
 @keyframes blink{50%{opacity:.35}}
-#editBar button{border-radius:100px;padding:9px 18px;font-family:inherit;font-size:12px;font-weight:800;cursor:pointer;border:1px solid transparent}
+#editBar button{border-radius:100px;padding:8px 15px;font-family:inherit;font-size:12px;font-weight:800;cursor:pointer;border:1px solid transparent;white-space:nowrap}
 #editSave{background:#c6f36a;color:#132019}
 #editSave:disabled{opacity:.55;cursor:wait}
 #editCancel{background:transparent;color:#ff9c9c;border-color:rgba(255,120,120,.4)}
-#editStatus{color:#9aafb5}
+#editStatus{color:#9aafb5;max-width:150px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+#editToast{position:fixed;bottom:82px;right:50%;transform:translateX(50%) translateY(20px);z-index:9999;background:rgba(7,18,23,.96);border:1px solid rgba(198,243,106,.45);color:#fff;border-radius:14px;padding:12px 20px;font-family:'Almarai',sans-serif;font-size:13px;max-width:min(440px,calc(100% - 40px));text-align:center;opacity:0;pointer-events:none;transition:opacity .3s,transform .3s;box-shadow:0 15px 40px rgba(0,0,0,.5)}
+#editToast.show{opacity:1;transform:translateX(50%) translateY(0)}
 body.editing [data-editable]{outline:2px dashed rgba(198,243,106,.75);outline-offset:4px;border-radius:6px;cursor:text;transition:outline-color .2s}
 body.editing [data-editable]:hover,body.editing [data-editable]:focus{outline-color:#c6f36a;background:rgba(198,243,106,.07)}
 body.editing img[data-editable]{cursor:pointer}
