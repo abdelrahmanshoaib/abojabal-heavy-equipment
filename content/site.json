@@ -166,12 +166,12 @@
     {
       "id": "p2",
       "category": "earth",
-      "catLabel": "",
-      "num": "",
-      "title": "اللوادر  الفشيخ",
-      "desc": "للتحميل ونقل المواد داخل مواقع التشغيل.  الفشيخ جدا",
-      "image": "",
-      "order": 0
+      "catLabel": "حفر وتحميل",
+      "num": "02",
+      "title": "اللوادر",
+      "desc": "للتحميل ونقل المواد داخل مواقع التشغيل.",
+      "image": "https://images.unsplash.com/photo-1557804506-669a67965ba0?auto=format&fit=crop&w=1000&q=85",
+      "order": 2
     },
     {
       "id": "p3",
