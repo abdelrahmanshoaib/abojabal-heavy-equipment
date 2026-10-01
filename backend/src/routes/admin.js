@@ -19,12 +19,14 @@ router.post('/login', async (req, res) => {
 
 router.use(requireAdmin);
 
-// حفظ موحد: يرجع deployed=file|github أو خطأ واضح
-async function persist(res, data, okPayload) {
+// إرسال موحد لنتيجة mutate: {ok, deployed, ...out} أو خطأ واضح
+async function send(res, p) {
   try {
-    const r = await db.writeAsync(data);
-    res.json({ ...okPayload, deployed: r.mode });
+    const r = await p;
+    const { mode, ...out } = r || {};
+    res.json({ ok: true, deployed: mode, ...out });
   } catch (e) {
+    if (e.code === 'NOT_FOUND') return res.status(404).json({ error: e.message });
     const code = e.code || (/GITHUB_TOKEN|Vercel/.test(e.message) ? 'PERSIST_UNAVAILABLE' : 'SAVE_FAILED');
     res.status(code === 'PERSIST_UNAVAILABLE' ? 503 : 500).json({ error: e.message, code });
   }
@@ -33,38 +35,46 @@ async function persist(res, data, okPayload) {
 // ---- SETTINGS ----
 router.get('/settings', (req, res) => res.json(db.read().settings));
 router.put('/settings', async (req, res) => {
-  const d = db.read();
   const b = req.body || {};
-  const keys = ['siteName', 'siteSub', 'logoIcon', 'siteTitle', 'metaDesc', 'heroEyebrow', 'heroTitleA', 'heroTitleHL', 'heroTitleB', 'heroDesc', 'heroCaptionSmall', 'heroCaptionBig', 'heroPrimary', 'heroSecondary', 'floatingSmall', 'floatingBig', 'aboutNo', 'aboutTitleA', 'aboutTitleHL', 'aboutDesc', 'aboutTag', 'aboutTagBig', 'servicesNo', 'servicesTitleA', 'servicesTitleHL', 'servicesDesc', 'productsNo', 'productsTitleA', 'productsTitleHL', 'processNo', 'processTitleA', 'processTitleHL', 'processDesc', 'contactNo', 'contactTitleA', 'contactTitleHL', 'contactDesc', 'email', 'phone', 'address', 'footerNote'];
-  keys.forEach((k) => { if (b[k] !== undefined) d.settings[k] = str(b[k], 2000); });
-  ['heroImage', 'aboutImage'].forEach((k) => { if (b[k] !== undefined) d.settings[k] = url(b[k]) || d.settings[k]; });
-  if (Array.isArray(b.ticker)) d.settings.ticker = b.ticker.map((t) => str(t, 100)).filter(Boolean).slice(0, 12);
-  if (Array.isArray(b.trust)) d.settings.trust = b.trust.map((t) => ({ n: str(t.n || t.num || '', 10), t: str(t.t || t.label || t.title || '', 100) })).filter((x) => x.t).slice(0, 6);
-  await persist(res, d, { ok: true, settings: d.settings });
+  await send(res, db.mutate((d) => {
+    const keys = ['siteName', 'siteSub', 'logoIcon', 'siteTitle', 'metaDesc', 'heroEyebrow', 'heroTitleA', 'heroTitleHL', 'heroTitleB', 'heroDesc', 'heroCaptionSmall', 'heroCaptionBig', 'heroPrimary', 'heroSecondary', 'floatingSmall', 'floatingBig', 'aboutNo', 'aboutTitleA', 'aboutTitleHL', 'aboutDesc', 'aboutTag', 'aboutTagBig', 'servicesNo', 'servicesTitleA', 'servicesTitleHL', 'servicesDesc', 'productsNo', 'productsTitleA', 'productsTitleHL', 'processNo', 'processTitleA', 'processTitleHL', 'processDesc', 'contactNo', 'contactTitleA', 'contactTitleHL', 'contactDesc', 'email', 'phone', 'address', 'footerNote'];
+    keys.forEach((k) => { if (b[k] !== undefined) d.settings[k] = str(b[k], 2000); });
+    ['heroImage', 'aboutImage'].forEach((k) => { if (b[k] !== undefined) d.settings[k] = url(b[k]) || d.settings[k]; });
+    if (Array.isArray(b.ticker)) d.settings.ticker = b.ticker.map((t) => str(t, 100)).filter(Boolean).slice(0, 12);
+    if (Array.isArray(b.trust)) d.settings.trust = b.trust.map((t) => ({ n: str(t.n || t.num || '', 10), t: str(t.t || t.label || t.title || '', 100) })).filter((x) => x.t).slice(0, 6);
+    return { settings: d.settings };
+  }));
 });
 
-// ---- generic CRUD helper ----
+// ---- generic CRUD helper (ذري: يعيد القراءة قبل كل كتابة) ----
 function crud(key, map) {
   return {
     list: (req, res) => res.json(db.read()[key] || []),
     create: async (req, res) => {
-      const d = db.read();
-      const item = { id: db.uid(key), ...map(req.body || {}) };
-      d[key] = d[key] || [];
-      d[key].push(item);
-      await persist(res, d, { ok: true, item });
+      const body = req.body || {};
+      await send(res, db.mutate((d) => {
+        const item = { id: db.uid(key), ...map(body) };
+        d[key] = d[key] || [];
+        d[key].push(item);
+        return { item };
+      }));
     },
     update: async (req, res) => {
-      const d = db.read();
-      const i = (d[key] || []).findIndex((x) => x.id === req.params.id);
-      if (i < 0) return res.status(404).json({ error: 'غير موجود' });
-      d[key][i] = { ...d[key][i], ...map(req.body || {}) };
-      await persist(res, d, { ok: true, item: d[key][i] });
+      const body = req.body || {};
+      const id = req.params.id;
+      await send(res, db.mutate((d) => {
+        const i = (d[key] || []).findIndex((x) => x.id === id);
+        if (i < 0) throw Object.assign(new Error('غير موجود'), { code: 'NOT_FOUND' });
+        d[key][i] = { ...d[key][i], ...map(body) };
+        return { item: d[key][i] };
+      }));
     },
     remove: async (req, res) => {
-      const d = db.read();
-      d[key] = (d[key] || []).filter((x) => x.id !== req.params.id);
-      await persist(res, d, { ok: true });
+      const id = req.params.id;
+      await send(res, db.mutate((d) => {
+        d[key] = (d[key] || []).filter((x) => x.id !== id);
+        return {};
+      }));
     }
   };
 }
@@ -110,15 +120,19 @@ router.put('/points/:id', points.update); router.delete('/points/:id', points.re
 // ---- MESSAGES inbox (محلياً فقط — على Vercel تُرفض حمايةً لخصوصية الزوار) ----
 router.get('/messages', (req, res) => res.json(db.read().messages || []));
 router.put('/messages/:id/read', async (req, res) => {
-  const d = db.read();
-  const m = (d.messages || []).find((x) => x.id === req.params.id);
-  if (m) m.read = true;
-  await persist(res, d, { ok: true });
+  const id = req.params.id;
+  await send(res, db.mutate((d) => {
+    const m = (d.messages || []).find((x) => x.id === id);
+    if (m) m.read = true;
+    return {};
+  }));
 });
 router.delete('/messages/:id', async (req, res) => {
-  const d = db.read();
-  d.messages = (d.messages || []).filter((x) => x.id !== req.params.id);
-  await persist(res, d, { ok: true });
+  const id = req.params.id;
+  await send(res, db.mutate((d) => {
+    d.messages = (d.messages || []).filter((x) => x.id !== id);
+    return {};
+  }));
 });
 
 module.exports = router;

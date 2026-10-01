@@ -183,8 +183,48 @@ async function writeAsync(data) {
   return { mode: 'github' };
 }
 
+/**
+ * حفظ ذري: يقرأ الأحدث → يطبق التعديل → يحفظ، مع إعادة المحاولة عند التعارض.
+ * يمنع ضياع التعديلات عند الحفظات السريعة المتتالية (آخر كاتب كان يمسح ما قبله).
+ */
+async function mutate(fn, message, repoPath) {
+  repoPath = repoPath || 'content/site.json';
+  if (!IS_VERCEL) {
+    const d = read();
+    const out = (await fn(d)) || {};
+    write(d);
+    return { mode: 'file', ...out };
+  }
+  if (!process.env.GITHUB_TOKEN) {
+    throw Object.assign(new Error(NO_TOKEN_MSG), { code: 'PERSIST_UNAVAILABLE' });
+  }
+  const { getFile, putWithSha, isConflict } = require('./githubStore');
+  let lastErr = null;
+  for (let i = 0; i < 5; i++) {
+    const { sha, text } = await getFile(repoPath);
+    let data;
+    try {
+      data = text ? JSON.parse(text) : defaultData();
+    } catch {
+      data = defaultData();
+    }
+    if (!Array.isArray(data.messages)) data.messages = [];
+    const out = (await fn(data)) || {};
+    data.messages = []; // لا تنشر صندوق الرسائل في ريبو عام أبداً
+    try {
+      await putWithSha(repoPath, JSON.stringify(data, null, 2), message || `تحديث المحتوى عبر اللوحة — ${new Date().toISOString()}`, sha);
+      return { mode: 'github', ...out };
+    } catch (e) {
+      lastErr = e;
+      if (!isConflict(e)) break;
+      await new Promise((r) => setTimeout(r, 300 * (i + 1)));
+    }
+  }
+  throw lastErr;
+}
+
 function uid(prefix) {
   return (prefix || 'id') + '-' + Date.now().toString(36) + '-' + Math.random().toString(36).slice(2, 7);
 }
 
-module.exports = { read, write, writeAsync, uid, defaultData };
+module.exports = { read, write, writeAsync, mutate, uid, defaultData };

@@ -35,29 +35,50 @@ async function getSha(repoPath) {
     const d = await gh(`/repos/${repo()}/contents/${repoPath}?ref=${encodeURIComponent(branch())}`);
     return d.sha || null;
   } catch (e) {
-    if (/404/.test(e.message)) return null;
+    if (/404|not found/i.test(e.message)) return null;
     throw e;
   }
+}
+
+/** قراءة ملف (نص) مع SHA — أساس الحفظ الذري */
+async function getFile(repoPath) {
+  const d = await gh(`/repos/${repo()}/contents/${repoPath}?ref=${encodeURIComponent(branch())}`).catch((e) => {
+    if (/404|not found/i.test(e.message)) return null;
+    throw e;
+  });
+  if (!d) return { sha: null, text: null };
+  return { sha: d.sha || null, text: Buffer.from(d.content || '', 'base64').toString('utf8') };
+}
+
+function isConflict(e) {
+  const m = e && e.message ? e.message : '';
+  return /409|422|sha|conflict|match|was supplied|is at|expected/i.test(m);
+}
+
+/** كتابة بـ SHA معلوم */
+async function putWithSha(repoPath, contentStr, message, sha, isBase64 = false) {
+  return gh(`/repos/${repo()}/contents/${repoPath}`, 'PUT', {
+    message,
+    content: isBase64 ? contentStr : Buffer.from(contentStr, 'utf8').toString('base64'),
+    sha: sha || undefined,
+    branch: branch()
+  });
 }
 
 /** حفظ ملف (نصي أو base64 جاهز) مع إعادة المحاولة عند تعارض SHA */
 async function putFile(repoPath, contentStr, message, isBase64 = false) {
   let lastErr = null;
-  for (let i = 0; i < 2; i++) {
+  for (let i = 0; i < 3; i++) {
     const sha = await getSha(repoPath);
     try {
-      return await gh(`/repos/${repo()}/contents/${repoPath}`, 'PUT', {
-        message,
-        content: isBase64 ? contentStr : Buffer.from(contentStr, 'utf8').toString('base64'),
-        sha: sha || undefined,
-        branch: branch()
-      });
+      return await putWithSha(repoPath, contentStr, message, sha, isBase64);
     } catch (e) {
       lastErr = e;
-      if (!/409|sha|conflict/i.test(e.message)) break;
+      if (!isConflict(e)) break;
+      await new Promise((r) => setTimeout(r, 300 * (i + 1)));
     }
   }
   throw lastErr;
 }
 
-module.exports = { putFile, getSha };
+module.exports = { putFile, getSha, getFile, putWithSha, isConflict };

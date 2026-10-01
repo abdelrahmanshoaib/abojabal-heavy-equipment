@@ -39,10 +39,11 @@ router.post('/contact', async (req, res) => {
     });
   }
   try {
-    const d = db.read();
-    d.messages = d.messages || [];
-    d.messages.unshift({ id: db.uid('msg'), name: n, email: e, service: s, message: m, date: new Date().toISOString(), read: false });
-    await db.writeAsync(d);
+    await db.mutate((d) => {
+      d.messages = d.messages || [];
+      d.messages.unshift({ id: db.uid('msg'), name: n, email: e, service: s, message: m, date: new Date().toISOString(), read: false });
+      return {};
+    });
     res.json({ ok: true, message: 'تم استلام طلبك بنجاح وسنتواصل معك قريباً.' });
   } catch (err) {
     res.status(500).json({ error: err.message });
