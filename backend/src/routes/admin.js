@@ -37,10 +37,10 @@ router.get('/settings', (req, res) => res.json(db.read().settings));
 router.put('/settings', async (req, res) => {
   const b = req.body || {};
   await send(res, db.mutate((d) => {
-  const keys = ['siteName', 'siteSub', 'logoIcon', 'siteTitle', 'metaDesc', 'heroEyebrow', 'heroTitleA', 'heroTitleHL', 'heroTitleB', 'heroDesc', 'heroCaptionSmall', 'heroCaptionBig', 'heroPrimary', 'heroSecondary', 'heroPrimaryUrl', 'heroSecondaryUrl', 'floatingSmall', 'floatingBig', 'aboutNo', 'aboutTitleA', 'aboutTitleHL', 'aboutDesc', 'aboutTag', 'aboutTagBig', 'servicesNo', 'servicesTitleA', 'servicesTitleHL', 'servicesDesc', 'productsNo', 'productsTitleA', 'productsTitleHL', 'processNo', 'processTitleA', 'processTitleHL', 'processDesc', 'contactNo', 'contactTitleA', 'contactTitleHL', 'contactDesc', 'email', 'phone', 'address', 'footerNote'];
+  const keys = ['siteName', 'siteSub', 'logoIcon', 'navCta', 'siteTitle', 'metaDesc', 'heroEyebrow', 'heroTitleA', 'heroTitleHL', 'heroTitleB', 'heroDesc', 'heroCaptionSmall', 'heroCaptionBig', 'heroPrimary', 'heroSecondary', 'heroPrimaryUrl', 'heroSecondaryUrl', 'floatingSmall', 'floatingBig', 'aboutNo', 'aboutTitleA', 'aboutTitleHL', 'aboutDesc', 'aboutTag', 'aboutTagBig', 'servicesNo', 'servicesTitleA', 'servicesTitleHL', 'servicesDesc', 'productsNo', 'productsTitleA', 'productsTitleHL', 'processNo', 'processTitleA', 'processTitleHL', 'processDesc', 'contactNo', 'contactTitleA', 'contactTitleHL', 'contactDesc', 'email', 'phone', 'address', 'footerNote'];
   keys.forEach((k) => { if (b[k] !== undefined) d.settings[k] = str(b[k], 2000); });
   ['heroImage', 'aboutImage', 'logoImage', 'favicon'].forEach((k) => { if (b[k] !== undefined) d.settings[k] = url(b[k]) || ''; });
-  ['heroPrimaryUrl', 'heroSecondaryUrl'].forEach((k) => { if (b[k] !== undefined) d.settings[k] = link(b[k]); });
+  ['heroPrimaryUrl', 'heroSecondaryUrl', 'navCtaUrl'].forEach((k) => { if (b[k] !== undefined) d.settings[k] = link(b[k]); });
     if (Array.isArray(b.ticker)) d.settings.ticker = b.ticker.map((t) => str(t, 100)).filter(Boolean).slice(0, 12);
     if (Array.isArray(b.trust)) d.settings.trust = b.trust.map((t) => ({ n: str(t.n || t.num || '', 10), t: str(t.t || t.label || t.title || '', 100) })).filter((x) => x.t).slice(0, 6);
     return { settings: d.settings };

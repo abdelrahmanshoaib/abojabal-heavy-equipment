@@ -60,17 +60,21 @@ async function fetchSite() {
   return null;
 }
 
-function buildNav(pages) {
+function buildNav(pages, settings) {
   if (!nav || !Array.isArray(pages) || !pages.length) return;
+  const s = settings || {};
+  const ctaText = s.navCta || 'تواصل معنا ↗';
+  const ctaUrl = s.navCtaUrl || '#contact';
   const sorted = [...pages].sort((a, b) => (a.order || 0) - (b.order || 0));
   const isContact = (p) => (p.slug === 'contact' || p.id === 'contact');
   const normal = sorted.filter((p) => !isContact(p));
   const contact = sorted.find(isContact);
   nav.innerHTML =
     normal.map((p) => `<a href="#${esc(p.slug || p.id)}">${esc(p.title)}</a>`).join('') +
-    (contact ? `<a class="nav-button" href="#contact">${esc(contact.title)} <span>↗</span></a>` : '');
+    (contact ? `<a class="nav-button" href="${esc(ctaUrl)}">${esc(stripCtaArrow(ctaText))} <span>↗</span></a>` : '');
   nav.querySelectorAll('a').forEach((a) => a.addEventListener('click', () => { nav.classList.remove('open'); if (menu) menu.textContent = '☰'; }));
 }
+function stripCtaArrow(t) { return String(t || '').replace(/\s*[↗↑]\s*$/u, ''); }
 
 function buildFilters(products) {
   const box = document.getElementById('filters');
@@ -115,7 +119,7 @@ async function loadSite() {
 
   // نافبار + إظهار/إخفاء الأقسام + صفحات مخصصة
   const pagesAll = d.pagesAll || d.pages || [];
-  buildNav(d.pages && d.pages.length ? d.pages : pagesAll);
+  buildNav(d.pages && d.pages.length ? d.pages : pagesAll, s);
   Object.values(KNOWN).forEach((sel) => { const el = document.querySelector(sel); if (el) el.style.display = ''; });
   (pagesAll || []).forEach((p) => {
     const sel = KNOWN[p.slug] || KNOWN[p.id];

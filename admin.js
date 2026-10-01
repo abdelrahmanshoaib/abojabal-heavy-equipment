@@ -62,7 +62,7 @@ $('#logout').onclick = () => { TOKEN = ''; localStorage.removeItem('abojabal_tok
 $('#refresh').onclick = loadAll;
 
 // تبويبات
-const titles = { settings: 'الإعدادات واللوجو', pages: 'الصفحات', services: 'الخدمات', products: 'المعدات', steps: 'خطوات العمل', points: 'نقاط عن الشركة', messages: 'الرسائل' };
+const titles = { menu: 'القائمة والهيدر', settings: 'الإعدادات والمحتوى', services: 'الخدمات', products: 'المعدات', steps: 'خطوات العمل', points: 'نقاط عن الشركة', messages: 'الرسائل' };
 $$('#tabs button').forEach((b) => b.onclick = () => {
   $$('#tabs button').forEach((x) => x.classList.remove('active'));
   b.classList.add('active');
@@ -75,14 +75,17 @@ $$('#tabs button').forEach((b) => b.onclick = () => {
 async function loadAll() {
   try {
     const s = await api('/api/admin/settings', { headers: headers(false) });
-    const f = $('#settingsForm');
-    Object.keys(s).forEach((k) => {
-      if (!f.elements[k]) return;
-      if (k === 'ticker' && Array.isArray(s[k])) f.elements[k].value = s[k].join(' ، ');
-      else if (k === 'trust' && Array.isArray(s[k])) f.elements[k].value = s[k].map((x) => `${x.n || ''}|${x.t || ''}`).join(' ، ');
-      else f.elements[k].value = s[k] || '';
-    });
-    loadList('pages', '#pagesList', (p) => `<b>${p.title}</b><span class="meta">/${p.slug} • ترتيب ${p.order || 0} • ${p.visible === false ? 'مخفية' : 'ظاهرة'}</span><p>${(p.content || '').slice(0, 120)}</p>`);
+    const fillSettings = (form) => {
+      if (!form) return;
+      Object.keys(s).forEach((k) => {
+        if (!form.elements[k]) return;
+        if (k === 'ticker' && Array.isArray(s[k])) form.elements[k].value = s[k].join(' ، ');
+        else if (k === 'trust' && Array.isArray(s[k])) form.elements[k].value = s[k].map((x) => `${x.n || ''}|${x.t || ''}`).join(' ، ');
+        else form.elements[k].value = s[k] ?? '';
+      });
+    };
+    ['settingsForm', 'logoForm', 'ctaForm'].forEach((id) => fillSettings(document.getElementById(id)));
+    renderMenuPages();
     loadList('services', '#servicesList', (x) => `<b>${x.icon || ''} ${x.title}</b><span class="meta">${x.num || ''} • ترتيب ${x.order || 0}</span><p>${x.desc || ''}</p>`);
     loadList('products', '#productsList', (x) => `<b>${x.title}</b><span class="meta">${x.catLabel || x.category} • ${x.num || ''}</span>${x.image ? `<img src="${fullImg(x.image)}">` : ''}<p>${x.desc || ''}</p>`);
     loadList('steps', '#stepsList', (x) => `<b>${x.num || ''} — ${x.title}</b><p>${x.desc || ''}</p>`);
@@ -104,6 +107,61 @@ async function loadAll() {
   }
 }
 function fullImg(u) { return /^https?:/.test(u) ? u : API + u; }
+function esc(s) { return String(s ?? '').replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c])); }
+
+// محرر الصفحات الكامل: عنوان + رابط + ترتيب + ظهور + محتوى + حفظ/حذف لكل صف
+async function renderMenuPages() {
+  const box = $('#pagesList');
+  if (!box) return;
+  let arr = [];
+  try {
+    arr = await api('/api/admin/pages', { headers: headers(false) });
+  } catch (e) { box.innerHTML = '<div class="card">تعذر التحميل.</div>'; return; }
+  arr.sort((a, b) => (a.order || 0) - (b.order || 0));
+  box.innerHTML = arr.length ? '' : '<div class="card">لا صفحات بعد — أضف أول صفحة بالأعلى.</div>';
+  arr.forEach((p) => {
+    const div = document.createElement('div');
+    div.className = 'item';
+    div.innerHTML = `<b>${esc(p.title)} <span class="meta">/${esc(p.slug)} • ترتيب ${p.order ?? 0} • ${p.visible === false ? 'مخفية' : 'ظاهرة'}</span></b>
+      <div class="grid2">
+        <label>العنوان<input data-f="title" value="${esc(p.title)}"></label>
+        <label>الرابط (slug)<input data-f="slug" dir="ltr" value="${esc(p.slug)}"></label>
+        <label>الترتيب<input data-f="order" type="number" value="${p.order ?? 0}"></label>
+        <label>الظهور<select data-f="visible"><option value="true"${p.visible !== false ? ' selected' : ''}>ظاهرة</option><option value="false"${p.visible === false ? ' selected' : ''}>مخفية</option></select></label>
+        <label class="full">المحتوى<textarea data-f="content" rows="2">${esc(p.content || '')}</textarea></label>
+      </div>
+      <div class="actions"><button class="btn small primary" data-a="save">💾 حفظ</button><button class="btn small danger" data-a="del">حذف</button></div>`;
+    div.querySelector('[data-a=save]').onclick = async () => {
+      const body = {};
+      div.querySelectorAll('[data-f]').forEach((el) => (body[el.dataset.f] = el.value));
+      body.visible = body.visible === 'true';
+      body.order = Number(body.order) || 0;
+      try {
+        await api('/api/admin/pages/' + p.id, { method: 'PUT', headers: headers(), body: JSON.stringify(body) });
+        say('تم حفظ الصفحة ✅'); loadAll();
+      } catch (e) { say(e.message, false); }
+    };
+    div.querySelector('[data-a=del]').onclick = async () => {
+      if (!confirm('حذف صفحة "' + p.title + '" نهائياً؟')) return;
+      try {
+        await api('/api/admin/pages/' + p.id, { method: 'DELETE', headers: headers(false) });
+        say('تم الحذف'); loadAll();
+      } catch (e) { say(e.message, false); }
+    };
+    box.appendChild(div);
+  });
+}
+
+// فورمات الإعدادات المصغرة (اللوجو / زر الهيدر): حفظ جزئي
+$$('form[data-settings-form]').forEach((fm) => fm.addEventListener('submit', async (e) => {
+  e.preventDefault();
+  const body = {};
+  [...e.target.elements].forEach((el) => { if (el.name) body[el.name] = el.value; });
+  try {
+    await api('/api/admin/settings', { method: 'PUT', headers: headers(), body: JSON.stringify(body) });
+    say('تم الحفظ ✅');
+  } catch (err) { say(err.message, false); }
+}));
 
 async function loadList(key, sel, render) {
   const arr = await api('/api/admin/' + key, { headers: headers(false) });

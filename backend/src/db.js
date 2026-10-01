@@ -24,6 +24,8 @@ function defaultData() {
       logoIcon: 'AJ',
       logoImage: '',
       favicon: '',
+      navCta: 'تواصل معنا ↗',
+      navCtaUrl: '#contact',
       siteTitle: 'أبو جبل | حلول المعدات الثقيلة',
       metaDesc: 'أبو جبل للمعدات الثقيلة — بيع واستيراد وتصدير المعدات الثقيلة.',
       heroEyebrow: 'تجارة المعدات الثقيلة بثقة واحتراف',

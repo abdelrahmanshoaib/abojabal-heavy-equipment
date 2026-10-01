@@ -25,8 +25,8 @@
   <aside class="side">
     <div class="logo"><span>AJ</span><div><b>أبو جبل</b><small>إدارة الموقع</small></div></div>
     <nav id="tabs">
-      <button data-tab="settings" class="active">⚙️ الإعدادات واللوجو</button>
-      <button data-tab="pages">📄 الصفحات</button>
+      <button data-tab="menu" class="active">🧭 القائمة والهيدر</button>
+      <button data-tab="settings">⚙️ الإعدادات والمحتوى</button>
       <button data-tab="services">🧰 الخدمات</button>
       <button data-tab="products">🚜 المعدات</button>
       <button data-tab="steps">🪜 خطوات العمل</button>
@@ -37,16 +37,12 @@
     <a class="btn ghost" href="index.html?edit=1" target="_blank" onclick="try{localStorage.setItem('abojabal_edit','1')}catch(e){}">👁 عرض الموقع والتعديل عليه</a>
   </aside>
   <main class="main">
-    <header class="topbar"><h1 id="tabTitle">الإعدادات واللوجو</h1><button id="refresh" class="btn">↻ تحديث</button></header>
+    <header class="topbar"><h1 id="tabTitle">القائمة والهيدر</h1><button id="refresh" class="btn">↻ تحديث</button></header>
     <p id="status" class="status"></p>
     <!-- الإعدادات -->
-    <section id="tab-settings" class="panel">
+    <section id="tab-settings" class="panel hidden">
       <form id="settingsForm" class="card grid2">
-        <h3>الهوية واللوجو + SEO</h3>
-        <label>اسم الموقع<input name="siteName"></label>
-        <label>وصف تحت الاسم<input name="siteSub"></label>
-        <label>أيقونة اللوجو (حرفان)<input name="logoIcon" maxlength="4"></label>
-        <label class="full">صورة اللوجو (اختياري — تظهر بدل الحروف)<input name="logoImage" dir="ltr" placeholder="https://... أو /uploads/..."></label>
+        <h3>المحتوى والتواصل + SEO (اللوجو والقائمة في تبويب 🧭)</h3>
         <label class="full">أيقونة المتصفح Favicon<input name="favicon" dir="ltr" placeholder="https://..."></label>
         <label class="full">عنوان المتصفح (title)<input name="siteTitle" dir="ltr"></label>
         <label class="full">وصف محركات البحث<textarea name="metaDesc" rows="2"></textarea></label>
@@ -99,10 +95,24 @@
       </form>
       <div class="card"><h3>📤 رفع صورة جديدة</h3><div class="row"><input type="file" id="imgFile" accept="image/*"><button id="uploadBtn" class="btn">رفع</button></div><p class="hint">بعد الرفع انسخ الرابط والصقه في حقل الصورة. مثال: <code dir="ltr">/uploads/img-xxx.jpg</code></p><p id="uploadOut" class="hint"></p></div>
     </section>
-    <!-- الصفحات -->
-    <section id="tab-pages" class="panel hidden">
-      <div class="card"><h3>➕ صفحة جديدة</h3><form id="pageForm" class="grid2"><label>العنوان<input name="title" required></label><label>الرابط (slug)<input name="slug" dir="ltr" placeholder="about"></label><label>الترتيب<input name="order" type="number" value="7"></label><label>ظاهرة؟<select name="visible"><option value="true">نعم</option><option value="false">مخفية</option></select></label><label class="full">المحتوى<textarea name="content" rows="3"></textarea></label><div class="full row"><button class="btn primary">إضافة</button></div></form></div>
-      <div id="pagesList" class="list"></div>
+    <!-- القائمة والهيدر -->
+    <section id="tab-menu" class="panel">
+      <form id="logoForm" class="card grid2" data-settings-form>
+        <h3>🅰️ اللوجو</h3>
+        <label>اسم الموقع<input name="siteName"></label>
+        <label>وصف تحت الاسم<input name="siteSub"></label>
+        <label>أيقونة اللوجو (حرفان)<input name="logoIcon" maxlength="4"></label>
+        <label class="full">صورة اللوجو (اختياري — بدل الحروف)<input name="logoImage" dir="ltr" placeholder="https://... أو /uploads/..."></label>
+        <div class="full row"><button class="btn primary" type="submit">💾 حفظ اللوجو</button></div>
+      </form>
+      <form id="ctaForm" class="card grid2" data-settings-form>
+        <h3>🔘 زر الهيدر الرئيسي</h3>
+        <label>نص الزر<input name="navCta"></label>
+        <label>رابط الزر<input name="navCtaUrl" dir="ltr" placeholder="#contact"></label>
+        <div class="full row"><button class="btn primary" type="submit">💾 حفظ الزر</button></div>
+      </form>
+      <div class="card"><h3>➕ إضافة صفحة جديدة</h3><form id="pageForm" class="grid2"><label>العنوان<input name="title" required></label><label>الرابط (slug)<input name="slug" dir="ltr" placeholder="offers"></label><label>الترتيب<input name="order" type="number" value="7"></label><label>ظاهرة في القائمة؟<select name="visible"><option value="true">نعم</option><option value="false">مخفية</option></select></label><label class="full">المحتوى (يظهر كقسم جديد في الموقع)<textarea name="content" rows="3"></textarea></label><div class="full row"><button class="btn primary">إضافة الصفحة</button></div></form></div>
+      <div class="card"><h3>📄 صفحات القائمة — تعديل مباشر</h3><p class="hint">عدّل أي حقل ثم اضغط حفظ في نفس الصف. إخفاء الصفحة يشيلها من القائمة والموقع معاً.</p><div id="pagesList" class="list"></div></div>
     </section>
     <!-- الخدمات -->
     <section id="tab-services" class="panel hidden">
