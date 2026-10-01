@@ -56,7 +56,8 @@
   const dirtyTrustTicker = { trust: false, ticker: false };
   const itemEdits = new Map(); // `${col}:${id}` -> {col,id,fields:{},els:[]}
   const pendingSettingValues = {}; // قيم إعدادات من النوافذ (تُدمج عند الحفظ)
-  const pendingNavEdits = new Map(); // pageId -> {title}
+  const pendingNavEdits = new Map(); // pageId -> {title, slug}
+  const pendingCustomEdits = new Map(); // pageId -> {content} لصفحات مخصصة
 
   document.addEventListener('site-loaded', () => { siteReady = true; });
   // تعليم العنصر المعدّل فعلياً — عند تكرار نفس الحقل (لوجو الهيدر/الفوتر) تُعتمد نسخة المستخدم
@@ -233,6 +234,7 @@
     markLogo();
     markLinks();
     markNav();
+    ensureAddPageButton();
     markTrustTicker();
     markItems();
     status('اضغط على أي نص أو صورة لتعديلها');
@@ -428,16 +430,90 @@
         if (!page) return;
         openModal({
           title: 'تعديل رابط القائمة',
-          fields: [{ name: 'text', label: 'النص', value: stripArrow(el.textContent) || page.title }],
+          fields: [
+            { name: 'text', label: 'النص', value: stripArrow(el.textContent) || page.title },
+            { name: 'slug', label: 'الرابط (بدون #)', value: slug }
+          ],
           onOk: (vals) => {
+            const newSlug = (vals.slug || '').trim().replace(/^#+/, '').replace(/\s+/g, '-') || slug;
             el.textContent = vals.text;
-            pendingNavEdits.set(page.id, { title: vals.text });
+            el.setAttribute('href', '#' + newSlug);
+            const sec = document.getElementById(slug);
+            if (sec && newSlug !== slug) sec.id = newSlug;
+            pendingNavEdits.set(page.id, { title: vals.text, slug: newSlug });
             closeModal();
             status('تم تعديل الرابط — اضغط حفظ');
           }
         });
       });
     });
+  }
+
+  // زر + صفحة من الوضع المرئي مباشرة
+  function ensureAddPageButton() {
+    if (document.getElementById('editAddPage')) return;
+    const b = document.createElement('button');
+    b.id = 'editAddPage';
+    b.type = 'button';
+    b.textContent = '+ صفحة';
+    b.title = 'إضافة صفحة جديدة';
+    b.onclick = openAddPageModal;
+    bar.insertBefore(b, bar.querySelector('#editSave'));
+  }
+
+  function openAddPageModal() {
+    openModal({
+      title: 'صفحة جديدة',
+      okText: 'إضافة',
+      fields: [
+        { name: 'title', label: 'العنوان', value: '' },
+        { name: 'slug', label: 'الرابط (حروف انجليزية بدون مسافات)', value: '' },
+        { name: 'content', label: 'المحتوى', value: '', textarea: true }
+      ],
+      onOk: async (vals, setErr) => {
+        const slug = (vals.slug || '').trim().replace(/^#+/, '').replace(/\s+/g, '-');
+        if (!slug) { setErr('اكتب رابطاً للصفحة'); return; }
+        if (!/^[A-Za-z0-9_-]+$/.test(slug)) { setErr('الرابط حروف انجليزية وأرقام و - _ فقط'); return; }
+        try {
+          const r = await api('/api/admin/pages', {
+            method: 'POST', headers: authH(),
+            body: JSON.stringify({ title: vals.title || 'صفحة جديدة', slug, content: vals.content || '', order: 99, visible: true })
+          });
+          closeModal();
+          const pagesAll = window.__SITE__?.pagesAll;
+          if (Array.isArray(pagesAll)) pagesAll.push(r.item);
+          appendNavLink(r.item);
+          appendCustomSection(r.item);
+          markNav();
+          status('تمت إضافة الصفحة ✅ وتظهر بعد دقيقة النشر');
+        } catch (e) { setErr(e.message); }
+      }
+    });
+  }
+
+  function appendNavLink(page) {
+    const navEl = document.querySelector('#mainNav') || document.querySelector('.nav');
+    if (!navEl) return;
+    const a = document.createElement('a');
+    a.href = '#' + page.slug;
+    a.textContent = page.title;
+    const cta = navEl.querySelector('.nav-button');
+    if (cta) navEl.insertBefore(a, cta);
+    else navEl.appendChild(a);
+  }
+
+  function appendCustomSection(page) {
+    let box = document.getElementById('customPages');
+    if (!box) return;
+    const sec = document.createElement('section');
+    sec.id = page.slug;
+    sec.className = 'section wrap';
+    sec.innerHTML = `<div class="section-top reveal visible"><div><span class="section-no">${esc(page.title)}</span><h2>${esc(page.title)}</h2></div></div><div class="card" style="padding:24px;border-radius:20px"><p data-custompage="${esc(page.id)}" style="white-space:pre-wrap;margin:0">${esc(page.content || '')}</p></div>`;
+    box.appendChild(sec);
+    const p = sec.querySelector('[data-custompage]');
+    markEditable(p, 'text');
+    p.contentEditable = 'true';
+    p.addEventListener('input', () => pendingCustomEdits.set(page.id, { content: p.innerText }));
   }
 
   function markTitles() {
@@ -613,6 +689,12 @@
       }
       for (const [pageId, fields] of pendingNavEdits) {
         status('جارٍ حفظ القائمة...');
+        const r = await api('/api/admin/pages/' + pageId, { method: 'PUT', headers: authH(), body: JSON.stringify(fields) });
+        if (r.deployed === 'github') viaGithub = true;
+        n++;
+      }
+      for (const [pageId, fields] of pendingCustomEdits) {
+        status('جارٍ حفظ محتوى الصفحات...');
         const r = await api('/api/admin/pages/' + pageId, { method: 'PUT', headers: authH(), body: JSON.stringify(fields) });
         if (r.deployed === 'github') viaGithub = true;
         n++;
