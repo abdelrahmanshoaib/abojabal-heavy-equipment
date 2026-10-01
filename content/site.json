@@ -166,22 +166,22 @@
     {
       "id": "p2",
       "category": "earth",
-      "catLabel": "",
-      "num": "",
-      "title": "اللوادر  الفشيخ",
-      "desc": "للتحميل ونقل المواد داخل مواقع التشغيل.  الفشيخ جدا",
-      "image": "",
-      "order": 0
+      "catLabel": "حفر وتحميل",
+      "num": "02",
+      "title": "اللوادر",
+      "desc": "للتحميل ونقل المواد داخل مواقع التشغيل.",
+      "image": "https://images.unsplash.com/photo-1557804506-669a67965ba0?auto=format&fit=crop&w=1000&q=85",
+      "order": 2
     },
     {
       "id": "p3",
-      "category": "transport",
-      "catLabel": "نقل",
-      "num": "03",
-      "title": "الشاحنات الثقيلة",
-      "desc": "حلول نقل للمشروعات والعمليات الصناعية واللوجستية.",
-      "image": "https://images.unsplash.com/photo-1519003722824-194d4455a60c?auto=format&fit=crop&w=1000&q=85",
-      "order": 3
+      "category": "earth",
+      "catLabel": "",
+      "num": "",
+      "title": "الشاحنات الثقيلة   الفتيق",
+      "desc": "",
+      "image": "",
+      "order": 0
     },
     {
       "id": "p4",
