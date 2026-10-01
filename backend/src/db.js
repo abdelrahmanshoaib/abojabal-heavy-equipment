@@ -31,7 +31,7 @@ function defaultData() {
       heroTitleHL: 'المعدات',
       heroTitleB: 'إلى قوة لمشروعك.',
       heroDesc: 'نوفّر حلولًا متكاملة لبيع واستيراد وتصدير المعدات الثقيلة، مع عناية بالتفاصيل وخدمة تجارية تواكب احتياجات أعمالك.',
-      heroImage: 'https://images.unsplash.com/photo-1581094794329-c8112a89af12?auto=format&fit=crop&w=1400&q=85',
+      heroImage: 'https://images.pexels.com/photos/129544/pexels-photo-129544.jpeg?auto=compress&cs=tinysrgb&w=1400',
       heroCaptionSmall: 'حلول جاهزة للمشروعات',
       heroCaptionBig: 'قوة. دقة. التزام.',
       heroPrimary: 'استكشف المعدات ↗',
@@ -49,7 +49,7 @@ function defaultData() {
       aboutTitleA: 'شريك عملي',
       aboutTitleHL: 'لخططك الكبيرة.',
       aboutDesc: 'نربط بين احتياجك والمعدة المناسبة من خلال فهم طبيعة العمل، مقارنة الخيارات، وتنظيم رحلة التوريد بأكبر قدر من الوضوح.',
-      aboutImage: 'https://images.unsplash.com/photo-1504917595217-d4dc5ebe6122?auto=format&fit=crop&w=1200&q=85',
+      aboutImage: 'https://images.unsplash.com/photo-1494412574643-ff11b0a5c1c3?auto=format&fit=crop&w=1200&q=85',
       aboutTag: 'خبرة تجارية',
       aboutTagBig: 'تبدأ من فهم احتياجك',
       servicesNo: '02 / خدماتنا',
@@ -88,8 +88,8 @@ function defaultData() {
       { id: 's4', icon: '⌁', num: '04', title: 'استشارات المشروعات', desc: 'مقارنة البدائل وتحديد الاحتياجات الفنية والتجارية قبل اتخاذ قرار الشراء.', link: 'اطلب استشارة ↗', linkUrl: '#contact', order: 4 }
     ],
     products: [
-      { id: 'p1', category: 'earth', catLabel: 'حفر وتحميل', num: '01', title: 'الحفارات', desc: 'للحفر وتجهيز المواقع وأعمال البنية التحتية.', image: 'https://images.unsplash.com/photo-1579412690850-bd41cd0af397?auto=format&fit=crop&w=1000&q=85', order: 1 },
-      { id: 'p2', category: 'earth', catLabel: 'حفر وتحميل', num: '02', title: 'اللوادر', desc: 'للتحميل ونقل المواد داخل مواقع التشغيل.', image: 'https://images.unsplash.com/photo-1557804506-669a67965ba0?auto=format&fit=crop&w=1000&q=85', order: 2 },
+      { id: 'p1', category: 'earth', catLabel: 'حفر وتحميل', num: '01', title: 'الحفارات', desc: 'للحفر وتجهيز المواقع وأعمال البنية التحتية.', image: 'https://images.unsplash.com/photo-1580901368919-7738efb0f87e?auto=format&fit=crop&w=1000&q=85', order: 1 },
+      { id: 'p2', category: 'earth', catLabel: 'حفر وتحميل', num: '02', title: 'اللوادر', desc: 'للتحميل ونقل المواد داخل مواقع التشغيل.', image: 'https://images.pexels.com/photos/33321431/pexels-photo-33321431.jpeg?auto=compress&cs=tinysrgb&w=1000', order: 2 },
       { id: 'p3', category: 'transport', catLabel: 'نقل', num: '03', title: 'الشاحنات الثقيلة', desc: 'حلول نقل للمشروعات والعمليات الصناعية واللوجستية.', image: 'https://images.unsplash.com/photo-1519003722824-194d4455a60c?auto=format&fit=crop&w=1000&q=85', order: 3 },
       { id: 'p4', category: 'build', catLabel: 'إنشاءات', num: '04', title: 'معدات الإنشاءات', desc: 'معدات مساندة لمواقع العمل ومشروعات التشييد.', image: 'https://images.unsplash.com/photo-1504307651254-35680f356dfd?auto=format&fit=crop&w=1000&q=85', order: 4 }
     ],
